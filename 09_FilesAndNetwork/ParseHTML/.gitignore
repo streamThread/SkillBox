@@ -1,4 +1,4 @@
-/.idea/
-/data/
+/src/main/resources/data/
 /target/
 /ParseHTML.iml
+/.idea/
