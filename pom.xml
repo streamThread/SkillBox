@@ -18,6 +18,7 @@
 
     <modules>
         <module>09_FilesAndNetwork/ParseHTML</module>
+        <module>09_FilesAndNetwork/MetroParsing</module>
     </modules>
 
 </project>
