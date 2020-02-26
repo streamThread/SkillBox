@@ -24,11 +24,16 @@ public class Parser {
     private boolean stationsWasGenerated;
     private boolean linesWasGenerated;
 
-    public JsonArray getConnection() {
-        return connection;
+    public JsonObject parseMetro(Document doc) {
+        JsonObject object = new JsonObject();
+        object.add("stations", generateStationsJsonObj(doc));
+        object.add("connections", chekAndChangeStationsInConnections());
+        object.add("lines", generateLinesJsonObj(doc));
+        return object;
     }
 
-    public JsonArray generateLinesJsonObj(Document doc) {
+
+    private JsonArray generateLinesJsonObj(Document doc) {
         if (linesWasGenerated) lines = new JsonArray();
         Elements el = doc.select(cSS_QUERY_TO_TABLE_ELEMENTS_LINES);
         Iterator<Element> it = el.iterator();
@@ -45,7 +50,7 @@ public class Parser {
         return lines;
     }
 
-    public JsonObject generateStationsJsonObj(Document document) throws IllegalArgumentException {
+    private JsonObject generateStationsJsonObj(Document document) throws IllegalArgumentException {
         Elements tableMetro = document.select(cSS_QUERY_TO_BODY_TABLE_METRO).nextAll("tr").not("tr.shadow");
         Elements tableCircle = document.select(cSS_QUERY_TO_BODY_TABLE_CIRCLE).nextAll("tr");
         Elements tableMono = document.select(cSS_QUERY_TO_BODY_TABLE_MONO).nextAll("tr");
@@ -92,63 +97,83 @@ public class Parser {
         Element[] lineNames = el.select("tr>td:nth-child(4)").not("td[data-sort-value=Infinity]")
                 .select("span:nth-child(even)").toArray(new Element[0]);
         if (lineNums.length > 0 && lineNames.length > 0) {
-            JsonObject temp = new JsonObject();
             JsonArray arrTemp = new JsonArray();
-            temp.addProperty("line", lineNumber);
-            temp.addProperty("station", lineName);
-            arrTemp.add(temp);
+            addStationToTempJarr(lineNumber, lineName, arrTemp);
             for (int i = 0; i < lineNums.length && i < lineNames.length; i++) {
-                temp = new JsonObject();
-                temp.addProperty("line", lineNums[i].text());
+                String lineNum = lineNums[i].text();
                 String stationName = lineNames[i].attr("title");
-                temp.addProperty("station", stationName);
-                arrTemp.add(temp);
+                addStationToTempJarr(lineNum, stationName, arrTemp);
             }
             connection.add(arrTemp);
         }
     }
 
-    void changeStationsInConnections() {
-        if (stationsWasGenerated) {
-            for (int j = 0; j < connection.size(); j++) {
-                JsonArray arr = connection.get(j).getAsJsonArray();
-                for (int i = 1; i < arr.size(); i++) {
-                    String lineNum = arr.get(i).getAsJsonObject().get("line").getAsString();
-                    if (!stationsJsonObj.keySet().contains(lineNum)) {
-                        arr.remove(i);
-                        if (connection.get(j).getAsJsonArray().size() <= 1) {
-                            connection.remove(j);
-                            j--;
-                        }
-                        continue;
-                    }
-                    JsonArray jsonArrayTemp = stationsJsonObj.get(lineNum).getAsJsonArray();
-                    for (int k = 0; k < jsonArrayTemp.size(); k++) {
-                        String lineName = jsonArrayTemp.get(k).getAsString();
-                        Pattern pattern = Pattern.compile(lineName);
-                        Matcher matcher = pattern.matcher(arr.get(i).getAsJsonObject().get("station").getAsString());
-                        if (matcher.find()) {
-                            arr.get(i).getAsJsonObject().addProperty("station", lineName);
-                            break;
-                        }
-                        if (jsonArrayTemp.size() - 1 == k) {
-                            arr.remove(i);
-                            i--;
-                            if (connection.get(j).getAsJsonArray().size() <= 1) {
-                                connection.remove(j);
-                                j--;
-                            }
-                        }
-                    }
+    private JsonArray addStationToTempJarr(String lineNumber, String lineName, JsonArray arrTemp) {
+        JsonObject temp = new JsonObject();
+        temp.addProperty("line", lineNumber);
+        temp.addProperty("station", lineName);
+        arrTemp.add(temp);
+        return arrTemp;
+    }
+
+    private JsonArray chekAndChangeStationsInConnections() throws IllegalStateException {
+        if (!stationsWasGenerated) {
+            throw new IllegalStateException("Stations wasn't generated");
+        }
+        for (int j = 0; j < connection.size(); j++) {
+            JsonArray arr = connection.get(j).getAsJsonArray();
+            if (deleteInvalidObjects(arr)) {
+                j--;
+                continue;
+            }
+            for (int i = 1; i < arr.size(); i++) {
+                JsonObject objectTemp = arr.get(i).getAsJsonObject();
+                String lineNum = arr.get(i).getAsJsonObject().get("line").getAsString();
+                String connectionName = arr.get(i).getAsJsonObject().get("station").getAsString();
+                if (!changeStationName(lineNum, connectionName, objectTemp)) {
+                    arr.remove(i);
+                    i--;
+                }
+                if (connection.get(j).getAsJsonArray().size() <= 1) {
+                    connection.remove(j);
+                    j--;
+                    break;
                 }
             }
         }
+        return connection;
     }
 
-    void dfgsfg(JsonArray arr){
-
+    private boolean deleteInvalidObjects(JsonArray arr) {
+        for (int i = 1; i < arr.size(); i++) {
+            String lineNum = arr.get(i).getAsJsonObject().get("line").getAsString();
+            if (!stationsJsonObj.keySet().contains(lineNum)) {
+                arr.remove(i);
+                i--;
+            }
+            if (arr.size() <= 1) {
+                connection.remove(arr);
+                return true;
+            }
+        }
+        return false;
     }
 
+    private boolean changeStationName(String lineNum, String connectionName, JsonObject objTemp) {
+        JsonArray jsonArrayTemp = stationsJsonObj.get(lineNum).getAsJsonArray();
+        for (int k = 0; k < jsonArrayTemp.size(); k++) {
+            String lineName = jsonArrayTemp.get(k).getAsString();
+            Pattern pattern = Pattern.compile(lineName);
+            Matcher matcher = pattern.matcher(connectionName);
+            if (matcher.find()) {
+                objTemp.addProperty("station", lineName);
+                return true;
+            }
+        }
+        return false;
+    }
 }
+
+
 
 

@@ -1,5 +1,6 @@
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -8,6 +9,10 @@ import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Writer;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+
+import static com.google.gson.JsonParser.parseString;
 
 public class Main {
 
@@ -19,14 +24,10 @@ public class Main {
         try {
             Document doc = connectToUrl(URL);
             Parser parser = new Parser();
-            JsonObject all = new JsonObject();
-            all.add("stations", parser.generateStationsJsonObj(doc));
-            all.add("lines", parser.generateLinesJsonObj(doc));
-
-//            printJson(all);
-            parser.changeStationsInConnections();
-            all.add("connections", parser.getConnection());
-            printJson(all);
+            JsonObject result = parser.parseMetro(doc);
+            printJson(result, JSON_FILE_OUTPATH);
+            JsonObject data = readJson(JSON_FILE_OUTPATH);
+            printStationsCount(data);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -39,12 +40,29 @@ public class Main {
         return Jsoup.connect(url).get();
     }
 
-    private static void printJson(JsonObject object) throws IOException {
+    private static void printJson(JsonObject object, String filePath) throws IOException {
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
-        Writer out = new BufferedWriter(new FileWriter(JSON_FILE_OUTPATH));
+        Writer out = new BufferedWriter(new FileWriter(filePath));
         gson.toJson(object, out);
         out.flush();
         out.close();
+    }
+
+    private static JsonObject readJson(String filePath) throws IOException {
+        String text = Files.readString(Paths.get(filePath));
+        return (JsonObject) parseString(text);
+    }
+
+    private static void printStationsCount(JsonObject object) {
+        for (JsonElement jsonElement : object.getAsJsonArray("lines")) {
+            JsonObject line = (JsonObject) jsonElement;
+            String lineName = line.get("name").getAsString();
+            String lineNum = line.get("number").getAsString();
+            int stationsCount = object.getAsJsonObject("stations").getAsJsonArray(lineNum).size();
+            int stringLength = 33 - lineName.length();
+            String form = "%" + stringLength + "s";
+            System.out.printf("Количество действующих станций на линии " + form + " %s : %d\n", "", lineName, stationsCount);
+        }
     }
 }
 
