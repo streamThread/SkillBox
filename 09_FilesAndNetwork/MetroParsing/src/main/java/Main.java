@@ -2,6 +2,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import jsonclasses.Result;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
@@ -21,7 +22,7 @@ public class Main {
         try {
             Document doc = connectToUrl(URL);
             Parser parser = new Parser();
-            JsonObject result = parser.parseMetro(doc);
+            Result result = parser.parseMetro(doc);
             printJson(result, JSON_FILE_OUTPATH);
             JsonObject data = readJson(JSON_FILE_OUTPATH);
             printStationsCount(data);
@@ -37,7 +38,7 @@ public class Main {
         return Jsoup.connect(url).get();
     }
 
-    private static void printJson(JsonObject object, String filePath) throws IOException {
+    private static void printJson(Result object, String filePath) throws IOException {
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
         Writer out = new BufferedWriter(new FileWriter(filePath));
         gson.toJson(object, out);
