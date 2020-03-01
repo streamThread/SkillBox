@@ -6,6 +6,7 @@
         <groupId>org.example</groupId>
         <artifactId>java_basics</artifactId>
         <version>1.0-SNAPSHOT</version>
+        <relativePath>../../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <artifactId>ParseHTML</artifactId>

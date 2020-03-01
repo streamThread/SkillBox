@@ -1,6 +1,5 @@
-/.idea/
-/java_basics.iml
-/09_FilesAndNetwork/MetroParsing/MetroParsing.iml
-/09_FilesAndNetwork/MetroParsing/target/
-/09_FilesAndNetwork/MetroParsing/data/test.json
-/09_FilesAndNetwork/ParseHTML/data/
+**/.idea/
+**/out/
+**/target/
+**/data/
+**/*.iml
