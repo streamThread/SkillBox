@@ -19,6 +19,7 @@
     <modules>
         <module>09_FilesAndNetwork/ParseHTML</module>
         <module>09_FilesAndNetwork/MetroParsing</module>
+        <module>10_SQLAndHibernate/SQL 10.2.3</module>
     </modules>
 
 </project>
