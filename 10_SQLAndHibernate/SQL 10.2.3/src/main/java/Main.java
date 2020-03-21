@@ -10,7 +10,7 @@ public class Main {
 
         Session session = sessionFactory.openSession();
 
-        try (session; sessionFactory) {
+        try (session) {
 
             Courses course = session.get(Courses.class, 5);
 
@@ -24,13 +24,13 @@ public class Main {
 
             System.out.println(purschaseList);
 
-//            System.out.println(subscription);
-//
-//            System.out.println(course);
-//
-//            System.out.println(student);
-//
-//            System.out.println(teacher);
+            System.out.println(subscription);
+
+            System.out.println(course);
+
+            System.out.println(student);
+
+            System.out.println(teacher);
         }
     }
 }
