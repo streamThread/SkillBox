@@ -23,5 +23,6 @@
         <mapping class="model.Students"/>
         <mapping class="model.Teachers"/>
         <mapping class="model.Subscriptions"/>
+        <mapping class="model.PurchaseList"/>
     </session-factory>
 </hibernate-configuration>
