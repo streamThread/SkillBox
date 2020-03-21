@@ -19,8 +19,9 @@
         <!-- Drop and re-create the database schema on startup -->
         <property name="hbm2ddl.auto">validate</property>
 
-        <mapping class="model.Courses"></mapping>
-        <mapping class="model.Students"></mapping>
-        <mapping class="model.Teachers"></mapping>
+        <mapping class="model.Courses"/>
+        <mapping class="model.Students"/>
+        <mapping class="model.Teachers"/>
+        <mapping class="model.Subscriptions"/>
     </session-factory>
 </hibernate-configuration>
