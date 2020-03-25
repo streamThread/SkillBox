@@ -13,7 +13,7 @@ import java.util.List;
 @Entity
 public class Courses {
 
-    @ManyToMany(cascade = CascadeType.ALL)
+    @ManyToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JoinTable(name = "Subscriptions",
             joinColumns = {@JoinColumn(name = "course_id")},
             inverseJoinColumns = {@JoinColumn(name = "student_id")})
@@ -30,7 +30,7 @@ public class Courses {
     private float pricePerHour;
     @Column(name = "students_count")
     private int studentsCount;
-    @ManyToOne(cascade = CascadeType.ALL)
+    @ManyToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Teachers teacher;
     @Enumerated(EnumType.STRING)
     @Column(columnDefinition = "enum")

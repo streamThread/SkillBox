@@ -8,7 +8,6 @@ import org.jsoup.nodes.Document;
 
 import java.io.*;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import static com.google.gson.JsonParser.parseString;
@@ -16,7 +15,7 @@ import static com.google.gson.JsonParser.parseString;
 public class Main {
 
     private static final String URL = "https://ru.wikipedia.org/wiki/Список_станций_Московского_метрополитена";
-    private static final String JSON_FILE_OUTPATH = "data" + File.separator + "test.json";
+    private static final String JSON_FILE_OUTPATH = "src/main/resources/test.json";
     private static final String URL_REGEX = "^https?:\\/\\/.+\\..+\\/?$";
 
     public static void main(String[] args) {

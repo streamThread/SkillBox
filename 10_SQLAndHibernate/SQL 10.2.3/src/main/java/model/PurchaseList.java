@@ -2,10 +2,7 @@ package model;
 
 import lombok.*;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.IdClass;
+import javax.persistence.*;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
@@ -14,14 +11,17 @@ import java.time.LocalDateTime;
 @Entity
 @IdClass(PurchaseList.PurchaseListKey.class)
 public class PurchaseList {
+
     @Id
     @Column(name = "course_name")
     private String courseName;
 
     private int price;
+
     @Id
     @Column(name = "student_name")
     private String name;
+
     @Column(name = "subscription_date")
     private LocalDateTime subscriptionDate;
 
