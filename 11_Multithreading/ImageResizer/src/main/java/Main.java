@@ -12,12 +12,13 @@ import java.util.stream.Stream;
 
 @Log4j2
 public class Main {
+
+    static final String SRC_FOLDER = "src/main/resources/from";
+    static final String DSC_FOLDER = "src/main/resources/to";
+
     public static void main(String[] args) {
         try {
-            String srcFolder = "src/main/resources/from";
-            String dstFolder = "src/main/resources/to";
-
-            File srcDir = new File(srcFolder);
+            File srcDir = new File(SRC_FOLDER);
 
             long start = System.currentTimeMillis();
 
@@ -27,9 +28,9 @@ public class Main {
 
             int procNum = Runtime.getRuntime().availableProcessors();
 
-            if (!Files.exists(Path.of(dstFolder))) Files.createDirectory(Path.of(dstFolder));
+            if (!Files.exists(Path.of(DSC_FOLDER))) Files.createDirectory(Path.of(DSC_FOLDER));
 
-            Stream.generate(() -> new ImageResizer(deque, dstFolder, start, 300))
+            Stream.generate(() -> new ImageResizer(deque, DSC_FOLDER, start, 300))
                     .limit(procNum)
                     .parallel()
                     .forEach(Thread::start);
