@@ -34,14 +34,14 @@ public class ImageResizer extends Thread {
             while (true) {
 
                 File file = deque.poll();
-                if (file == null){
+                if (file == null) {
                     break;
                 }
 
                 @NonNull
                 BufferedImage image = ImageIO.read(file);
 
-                int newHeight = Math.round((long) (image.getHeight() / (image.getWidth() / newWidth)));
+                int newHeight = (int) Math.round((image.getHeight() / (image.getWidth() / (double) newWidth)));
 
                 BufferedImage finalImage;
 
