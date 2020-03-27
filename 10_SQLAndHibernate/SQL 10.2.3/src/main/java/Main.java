@@ -15,8 +15,8 @@ public class Main {
             Transaction transaction = session.beginTransaction();
 
             String queryInsert = "insert into LinkedPurchaseList(courseId, studentId) " +
-                    "select (select id from Courses c where c.name = p.courseName), " +
-                    "(select id from Students s where s.name = p.name) from PurchaseList p";
+                    "select (select c from Courses c where c.name = p.courseName), " +
+                    "(select s from Students s where s.name = p.name) from PurchaseList p";
 
             int rows = session.createQuery(queryInsert).executeUpdate();
 

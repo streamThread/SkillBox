@@ -2,10 +2,7 @@ package model;
 
 import lombok.*;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.IdClass;
+import javax.persistence.*;
 import java.io.Serializable;
 
 @Data
@@ -15,12 +12,14 @@ import java.io.Serializable;
 public class LinkedPurchaseList {
 
     @Id
-    @Column(name = "student_id")
-    private int studentId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "student_id")
+    private Students studentId;
 
     @Id
-    @Column(name = "course_id")
-    private int courseId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "course_id")
+    private Courses courseId;
 
     @EqualsAndHashCode
     @ToString
@@ -30,10 +29,10 @@ public class LinkedPurchaseList {
         static final long serialVersionUID = 1L;
         @Getter
         @Setter
-        private int studentId;
+        private Students studentId;
 
         @Getter
         @Setter
-        private int courseId;
+        private Courses courseId;
     }
 }

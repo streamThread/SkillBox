@@ -3,3 +3,4 @@
 **/target/
 **/data/
 **/*.iml
+/11_Multithreading/ImageResizer/src/main/resources/to/
