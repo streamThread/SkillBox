@@ -31,9 +31,12 @@ public class ImageResizer extends Thread {
     @Override
     public void run() {
         try {
-            while (deque.peek() != null) {
+            while (true) {
 
                 File file = deque.poll();
+                if (file == null){
+                    break;
+                }
 
                 @NonNull
                 BufferedImage image = ImageIO.read(file);
