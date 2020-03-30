@@ -8,15 +8,18 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Deque;
+import java.util.List;
 
 @Log4j2
-public class ImageResizer extends Thread {
+public class ImageResizer implements Runnable {
 
     Deque<File> deque;
     String dstFolder;
     long start;
     int newWidth;
+    List<String> fileNames = new ArrayList<>();
 
     public ImageResizer(Deque<File> deque, String dstFolder, long start, int newWidth) {
         if (newWidth <= 0) {
@@ -40,6 +43,8 @@ public class ImageResizer extends Thread {
 
                 @NonNull
                 BufferedImage image = ImageIO.read(file);
+
+                fileNames.add(file.getName());
 
                 int newHeight = (int) Math.round((image.getHeight() / (image.getWidth() / (double) newWidth)));
 
