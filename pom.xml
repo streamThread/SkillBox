@@ -20,6 +20,9 @@
         <module>09_FilesAndNetwork/ParseHTML</module>
         <module>09_FilesAndNetwork/MetroParsing</module>
         <module>10_SQLAndHibernate/SQL 10.2.3</module>
+        <module>11_Multithreading/Deadlock</module>
+        <module>11_Multithreading/ImageResizer</module>
+        <module>11_Multithreading/Transactions</module>
     </modules>
 
 </project>
