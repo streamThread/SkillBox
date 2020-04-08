@@ -1,15 +1,32 @@
-import lombok.*;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.NonNull;
+
+import javax.persistence.*;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 @Data
-public class Account {
+@Entity
+@NoArgsConstructor
+public class Account implements Comparable {
 
     @NonNull
-    private final String ACC_NUMBER;
-    private volatile long money;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer acc_number;
+    private BigDecimal money;
     private boolean isBlocked;
+    @Transient
+    private BigDecimal moneyInCheckCache = new BigDecimal(0).setScale(2, RoundingMode.HALF_UP);
 
-    Account(@NonNull String ACC_NUMBER, long money) {
-        this.ACC_NUMBER = ACC_NUMBER;
-        this.money = money;
+    Account(double money) {
+        this.money = BigDecimal.valueOf(money).setScale(2, RoundingMode.HALF_UP);
+    }
+
+    @Override
+    public int compareTo(Object o) {
+        Account account = (Account) o;
+        return Integer.compare(this.getAcc_number(), account.getAcc_number());
     }
 }
