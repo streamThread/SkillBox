@@ -10,11 +10,16 @@ import org.hibernate.internal.util.collections.ConcurrentReferenceHashMap;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Random;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 
 @Log4j2
 public class Bank {
 
+    final private BigDecimal MINIMUM_AMOUNT_TO_SEND_FOR_VERIFICATION = new BigDecimal(50000);
     Random random = new Random();
+    ExecutorService executors = Executors.newSingleThreadExecutor();
     private ConcurrentReferenceHashMap<Integer, Account> accounts = new ConcurrentReferenceHashMap<>();
 
     public ConcurrentReferenceHashMap<Integer, Account> getAccounts() {
@@ -40,64 +45,20 @@ public class Bank {
         Account from = getAccountFromBaseOrCache(fromAccountNum, session);
         Account to = getAccountFromBaseOrCache(toAccountNum, session);
 
-        Account syncAcc1 = from.compareTo(to) < 0 ? from : to;
-        Account syncAcc2 = from.compareTo(to) < 0 ? to : from;
-
         BigDecimal amount = BigDecimal.valueOf(amountIn).setScale(2, RoundingMode.HALF_UP);
 
+        SyncAccs syncAccs = new SyncAccs(from, to);
+
         try (session) {
-            synchronized (syncAcc1) {
-                synchronized (syncAcc2) {
+            synchronized (syncAccs.syncAcc1) {
+                synchronized (syncAccs.syncAcc2) {
                     if (!doSimpleTransfer(from, to, amount, transaction).equals(TransactionStatus.NEED_CHECK)) {
                         return;
                     }
                 }
             }
-//      если требуется проверка СБ, то снимаем блокировку c аккаунтов, чтобы можно было совершать по ним другие операции
-//      синхронизируемся по банку
-            synchronized (this) {
-//     если аккаунт был заблокирован во время ожидания потока в очереди, разблокируем деньги
-//     и закрываем метод. (экономия времени достигается путем завершения работы до отправки
-//     операции на проверку в СБ)
-                if (from.isBlocked() || to.isBlocked()) {
-                    synchronized (from) {
-                        from.setMoneyInCheckCache(from.getMoneyInCheckCache().subtract(amount));
-                    }
-                    log.info("The operation did not pass the security check. Accounts are blocked");
-                    return;
-                }
-                // по условию метод разработан кем-то другим, оставляем как есть
-                if (isFraud(String.valueOf(fromAccountNum),
-                        String.valueOf(toAccountNum),
-                        amount.longValue())) {
-                    synchronized (syncAcc1) {
-                        synchronized (syncAcc2) {
-                            from.setMoneyInCheckCache(from.getMoneyInCheckCache().subtract(amount));
-                            from.setBlocked(true);
-                            to.setBlocked(true);
-                            transaction.commit();
-                        }
-                    }
-                    log.info("The operation did not pass the security check. Accounts are blocked");//
-                    return;
-                }
-            }
-            synchronized (syncAcc1) {
-                synchronized (syncAcc2) {
-                    from.setMoneyInCheckCache(from.getMoneyInCheckCache().subtract(amount));
-                    from.setMoney(from.getMoney().subtract(amount));
-                    to.setMoney(to.getMoney().add(amount));
-                    transaction.commit();
-                }
-            }
-            log.info(String.format("Money sent from %s to %s: %.2f у.е.",
-                    fromAccountNum, toAccountNum, amount.doubleValue()));
-        } catch (InterruptedException e) {
-            synchronized (from) {
-                from.setMoneyInCheckCache(from.getMoneyInCheckCache().subtract(amount));
-            }
-            log.error("isFraud() InterruptedException", e);
         }
+        executors.submit(new IsFraud(amount, from, to, syncAccs));
     }
 
     private TransactionStatus doSimpleTransfer(Account from, Account to, BigDecimal amount, Transaction transaction) {
@@ -111,7 +72,7 @@ public class Bank {
             return TransactionStatus.BLOCKED;
         }
 
-        if (amount.compareTo(new BigDecimal(50000)) < 0) {
+        if (amount.compareTo(MINIMUM_AMOUNT_TO_SEND_FOR_VERIFICATION) < 0) {
             from.setMoney(from.getMoney().subtract(amount));
             to.setMoney(to.getMoney().add(amount));
             transaction.commit();
@@ -119,7 +80,14 @@ public class Bank {
                     from.getAcc_number(), to.getAcc_number(), amount.doubleValue()));
             return TransactionStatus.COMMITED;
         }
+        if (from.isChecking() || to.isChecking()) {
+            log.info("We need to check this transaction but one of the account is already on verification. Please try later");
+            return TransactionStatus.CHECKING_ABORTED;
+        }
         from.setMoneyInCheckCache(from.getMoneyInCheckCache().add(amount)); // резервируем средства для проверки в службе безопасности
+        from.setChecking(true);
+        to.setChecking(true);
+        log.info("Sending transaction to verification. Please, wait...");
         return TransactionStatus.NEED_CHECK;
     }
 
@@ -148,8 +116,9 @@ public class Bank {
     }
 
     private enum TransactionStatus {
-        BLOCKED, COMMITED, NEED_CHECK
+        BLOCKED, COMMITED, NEED_CHECK, CHECKING_ABORTED
     }
+
 
     @Value
     @AllArgsConstructor(access = AccessLevel.PRIVATE)
@@ -161,6 +130,76 @@ public class Bank {
         @Override
         public void run() {
             transfer(fromAccountNum, toAccountNum, amount);
+        }
+    }
+
+    @Value
+    @AllArgsConstructor(access = AccessLevel.PRIVATE)
+    private class IsFraud implements Runnable {
+        BigDecimal amount;
+        Account from;
+        Account to;
+        SyncAccs syncAccs;
+
+        @Override
+        public void run() {
+            try {
+                if (isFraud(String.valueOf(from.getAcc_number()),
+                        String.valueOf(to.getAcc_number()),
+                        amount.longValue())) {
+                    synchronized (syncAccs.syncAcc1) {
+                        synchronized (syncAccs.syncAcc2) {
+                            Session session = SessionFactoryUtil.getSessionFactory().openSession();
+                            try (session) {
+                                Transaction transaction = session.beginTransaction();
+                                session.lock(from, LockMode.READ);
+                                session.lock(to, LockMode.READ);
+                                from.setMoneyInCheckCache(from.getMoneyInCheckCache().subtract(amount));
+                                from.setChecking(false);
+                                to.setChecking(false);
+                                from.setBlocked(true);
+                                to.setBlocked(true);
+                                transaction.commit();
+                            }
+                        }
+                    }
+                    log.info("The operation did not pass the security check. Accounts are blocked");
+                    return;
+                }
+                synchronized (syncAccs.syncAcc1) {
+                    synchronized (syncAccs.syncAcc2) {
+                        Session session = SessionFactoryUtil.getSessionFactory().openSession();
+                        try (session) {
+                            Transaction transaction1 = session.beginTransaction();
+                            session.lock(from, LockMode.READ);
+                            session.lock(to, LockMode.READ);
+                            from.setMoneyInCheckCache(from.getMoneyInCheckCache().subtract(amount));
+                            from.setChecking(false);
+                            to.setChecking(false);
+                            from.setMoney(from.getMoney().subtract(amount));
+                            to.setMoney(to.getMoney().add(amount));
+                            transaction1.commit();
+                        }
+                    }
+                }
+                log.info(String.format("Money sent from %s to %s: %.2f у.е.",
+                        from.getAcc_number(), to.getAcc_number(), amount.doubleValue()));
+            } catch (InterruptedException e) {
+                synchronized (from) {
+                    from.setMoneyInCheckCache(from.getMoneyInCheckCache().subtract(amount));
+                }
+                log.error(e);
+            }
+        }
+    }
+
+    private class SyncAccs {
+        final Account syncAcc1;
+        final Account syncAcc2;
+
+        SyncAccs(Account from, Account to) {
+            syncAcc1 = from.compareTo(to) < 0 ? from : to;
+            syncAcc2 = from.compareTo(to) < 0 ? to : from;
         }
     }
 }

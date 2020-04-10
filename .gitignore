@@ -5,3 +5,4 @@
 **/*.iml
 /11_Multithreading/ImageResizer/src/main/resources/to/
 /11_Multithreading/Transactions/.allure/
+/11_Multithreading/ImageResizer/src/main/resources/from/

@@ -19,6 +19,8 @@ public class Account implements Comparable {
     private boolean isBlocked;
     @Transient
     private BigDecimal moneyInCheckCache = new BigDecimal(0).setScale(2, RoundingMode.HALF_UP);
+    @Transient
+    private boolean isChecking;
 
     Account(double money) {
         this.money = BigDecimal.valueOf(money).setScale(2, RoundingMode.HALF_UP);

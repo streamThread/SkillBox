@@ -24,7 +24,7 @@ public class TestBank {
     static Bank bank;
 
     @BeforeAll
-    static void beforeInit(){
+    static void beforeInit() {
         sessionFactory = SessionFactoryUtil.getSessionFactory();
         Session session = sessionFactory.openSession();
         bank = new Bank();
@@ -53,18 +53,10 @@ public class TestBank {
     void transferOnLoadTest() {
         try {
             Stream.generate(() -> bank).limit(50_000).parallel()
-                    .map(a -> new FutureTask(Executors.callable(a.getRunnableTransfer(
+                    .forEach(a -> a.transfer(
                             new Random().nextInt(1000) + 1,
                             new Random().nextInt(1000) + 1,
-                            new Random().nextDouble() * 100000))))
-                    .peek(FutureTask::run)
-                    .forEach(futureTask -> {
-                        try {
-                            futureTask.get();
-                        } catch (InterruptedException | ExecutionException e) {
-                            log.error(e);
-                        }
-                    });
+                            new Random().nextDouble() * 100000));
             Session session = sessionFactory.openSession();
             Query<BigDecimal> query = session.createQuery("select sum(money) from Account");
             BigDecimal result = query.uniqueResult();
@@ -136,15 +128,13 @@ public class TestBank {
         Session session = SessionFactoryUtil.getSessionFactory().openSession();
         try (session) {
             ExecutorService executorService = Executors.newFixedThreadPool(5);
-            List<Callable<Object>> transfers = new ArrayList<>();
             for (int i = 0; i < 50_000; i++) {
-                transfers.add(Executors.callable(bank.getRunnableTransfer(
+                executorService.submit(bank.getRunnableTransfer(
                         new Random().nextInt(999),
                         new Random().nextInt(999),
-                        new Random().nextDouble() * 100_000), null));
+                        new Random().nextDouble() * 100_000));
             }
-            executorService.invokeAll(transfers);
-            executorService.shutdown();
+            executorService.awaitTermination(10, TimeUnit.MINUTES);
             Query<BigDecimal> query = session.createQuery("select sum(money) from Account");
             BigDecimal result = query.uniqueResult();
             assertEquals(0, new BigDecimal(70_000_000).compareTo(result));
@@ -220,7 +210,7 @@ public class TestBank {
             session.get(Account.class, 1).setBlocked(true);
             transaction.commit();
             bank.transfer(1, 2, 22000.54);
-            bank.transfer(3, 4, 70000);
+            bank.transfer(3, 4, 80000);
             BigDecimal acc1ResultMoney = bank.getAccounts().get(1).getMoney();
             BigDecimal acc2ResultMoney = bank.getAccounts().get(2).getMoney();
             BigDecimal acc3ResultMoney = bank.getAccounts().get(3).getMoney();
@@ -261,7 +251,7 @@ public class TestBank {
                 session.clear();
                 account = session.get(Account.class, 2);
             }
-            assertEquals(true, (end - start) < 2000);
+            assertTrue((end - start) < 2000);
         } catch (RuntimeException e) {
             log.error(e);
         }
