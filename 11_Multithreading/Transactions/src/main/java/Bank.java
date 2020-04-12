@@ -17,6 +17,7 @@ import java.util.concurrent.Executors;
 @Log4j2
 public class Bank {
 
+    final Object lock = new Object();
     final private BigDecimal MINIMUM_AMOUNT_TO_SEND_FOR_VERIFICATION = new BigDecimal(50000);
     Random random = new Random();
     ExecutorService executors = Executors.newSingleThreadExecutor();
@@ -32,47 +33,43 @@ public class Bank {
         return random.nextBoolean();
     }
 
-    //при разработке исходим из того, что служба безопасности (СБ) одна и обращаемся к ней только в крайнем случае
     public void transfer(Integer fromAccountNum, Integer toAccountNum, double amountIn) {
 
         if (fromAccountNum.equals(toAccountNum)) {
             throw new IllegalArgumentException("The sender and recipient accounts must be different");
         }
 
-        Session session = SessionFactoryUtil.getSessionFactory().openSession();
-        Transaction transaction = session.beginTransaction();
-
-        Account from = getAccountFromBaseOrCache(fromAccountNum, session);
-        Account to = getAccountFromBaseOrCache(toAccountNum, session);
+        Account from = getAccountFromBaseOrCache(fromAccountNum);
+        Account to = getAccountFromBaseOrCache(toAccountNum);
 
         BigDecimal amount = BigDecimal.valueOf(amountIn).setScale(2, RoundingMode.HALF_UP);
 
         SyncAccs syncAccs = new SyncAccs(from, to);
 
-        try (session) {
-            synchronized (syncAccs.syncAcc1) {
-                synchronized (syncAccs.syncAcc2) {
-                    if (!doSimpleTransfer(from, to, amount, transaction).equals(TransactionStatus.NEED_CHECK)) {
-                        return;
-                    }
+        synchronized (syncAccs.syncAcc1) {
+            synchronized (syncAccs.syncAcc2) {
+                if (!doSimpleTransfer(from, to, amount).equals(TransactionStatus.NEED_CHECK)) {
+                    return;
                 }
             }
         }
         executors.submit(new IsFraud(amount, from, to, syncAccs));
     }
 
-    private TransactionStatus doSimpleTransfer(Account from, Account to, BigDecimal amount, Transaction transaction) {
+    private TransactionStatus doSimpleTransfer(Account from, Account to, BigDecimal amount) {
         if (from.isBlocked() || to.isBlocked()) {
             log.info("The transfer cannot be completed. One of the accounts is blocked");
             return TransactionStatus.BLOCKED;
         }
-        //проверяем наличие средств на счете с учетом тех, что находятся на проверке в СБ
         if ((from.getMoney().subtract(from.getMoneyInCheckCache())).compareTo(amount) < 0) {
             log.info("Insufficient funds for transfer");
             return TransactionStatus.BLOCKED;
         }
-
         if (amount.compareTo(MINIMUM_AMOUNT_TO_SEND_FOR_VERIFICATION) < 0) {
+            Session session = SessionFactoryUtil.getSessionFactory().openSession();
+            session.lock(from, LockMode.PESSIMISTIC_WRITE);
+            session.lock(to, LockMode.PESSIMISTIC_WRITE);
+            Transaction transaction = session.beginTransaction();
             from.setMoney(from.getMoney().subtract(amount));
             to.setMoney(to.getMoney().add(amount));
             transaction.commit();
@@ -91,23 +88,24 @@ public class Bank {
         return TransactionStatus.NEED_CHECK;
     }
 
-    public BigDecimal getBalance(Integer accountNum, Session session) {
-        Account account = getAccountFromBaseOrCache(accountNum, session);
+    public BigDecimal getBalance(Integer accountNum) {
+        Account account = getAccountFromBaseOrCache(accountNum);
         return account.getMoney();
     }
 
-    private Account getAccountFromBaseOrCache(Integer accNum, Session session) {
+    private Account getAccountFromBaseOrCache(Integer accNum) {
         Account result;
         if ((result = accounts.get(accNum)) == null) {
-            synchronized (this) {
+            synchronized (lock) {
                 if ((result = accounts.get(accNum)) == null) {
+                    Session session = SessionFactoryUtil.getSessionFactory().openSession();
                     result = session.get(Account.class, accNum);
                     result.setMoney(result.getMoney().setScale(2, RoundingMode.HALF_UP));
                     accounts.put(result.getAcc_number(), result);
+                    session.close();
                 }
             }
         }
-        session.lock(result, LockMode.READ);
         return result;
     }
 
@@ -152,8 +150,8 @@ public class Bank {
                             Session session = SessionFactoryUtil.getSessionFactory().openSession();
                             try (session) {
                                 Transaction transaction = session.beginTransaction();
-                                session.lock(from, LockMode.READ);
-                                session.lock(to, LockMode.READ);
+                                session.lock(from, LockMode.PESSIMISTIC_WRITE);
+                                session.lock(to, LockMode.PESSIMISTIC_WRITE);
                                 from.setMoneyInCheckCache(from.getMoneyInCheckCache().subtract(amount));
                                 from.setChecking(false);
                                 to.setChecking(false);
@@ -171,8 +169,8 @@ public class Bank {
                         Session session = SessionFactoryUtil.getSessionFactory().openSession();
                         try (session) {
                             Transaction transaction1 = session.beginTransaction();
-                            session.lock(from, LockMode.READ);
-                            session.lock(to, LockMode.READ);
+                            session.lock(from, LockMode.PESSIMISTIC_WRITE);
+                            session.lock(to, LockMode.PESSIMISTIC_WRITE);
                             from.setMoneyInCheckCache(from.getMoneyInCheckCache().subtract(amount));
                             from.setChecking(false);
                             to.setChecking(false);

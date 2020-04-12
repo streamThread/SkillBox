@@ -1,4 +1,5 @@
 import lombok.extern.log4j.Log4j2;
+import org.hibernate.LockOptions;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
@@ -43,20 +44,30 @@ public class TestBank {
         try (session) {
             bank = new Bank();
             Transaction transaction = session.beginTransaction();
-            session.createQuery("update Account set money = 70000.00, isBlocked = false").executeUpdate();
+            session.createQuery("update Account set money = 70000.00, isBlocked = false").setLockOptions(LockOptions.UPGRADE).executeUpdate();
             transaction.commit();
         }
     }
+
 
     @Test
     @DisplayName("transfer() test under load by Stream API")
     void transferOnLoadTest() {
         try {
-            Stream.generate(() -> bank).limit(50_000).parallel()
-                    .forEach(a -> a.transfer(
+            Stream.generate(() -> bank).limit(100_000).parallel()
+                    .map(a -> new FutureTask(Executors.callable(a.getRunnableTransfer(
                             new Random().nextInt(1000) + 1,
                             new Random().nextInt(1000) + 1,
-                            new Random().nextDouble() * 100000));
+                            new Random().nextDouble() * 100000))))
+                    .forEach(a -> {
+                        a.run();
+                        try {
+                            a.get();
+                        } catch (InterruptedException | ExecutionException e) {
+                            log.error(e);
+                        }
+                    });
+            bank.executors.shutdownNow();
             Session session = sessionFactory.openSession();
             Query<BigDecimal> query = session.createQuery("select sum(money) from Account");
             BigDecimal result = query.uniqueResult();
@@ -71,19 +82,20 @@ public class TestBank {
     @DisplayName("transfer() test under load with high concurrency by Stream API")
     void transferOnLoadWithHighConcurrencyTest() {
         try {
-            Stream.generate(() -> bank).limit(1_000).parallel()
+            Stream.generate(() -> bank).limit(50_000).parallel()
                     .map(a -> new FutureTask(Executors.callable(a.getRunnableTransfer(
                             new Random().nextInt(10) + 1,
                             new Random().nextInt(10) + 1,
                             new Random().nextDouble() * 100000))))
-                    .peek(FutureTask::run)
                     .forEach(futureTask -> {
+                        futureTask.run();
                         try {
                             futureTask.get();
                         } catch (InterruptedException | ExecutionException e) {
                             log.error(e);
                         }
                     });
+            bank.executors.shutdownNow();
             Session session = sessionFactory.openSession();
             Query<BigDecimal> query = session.createQuery("select sum(money) from Account");
             BigDecimal result = query.uniqueResult();
@@ -97,10 +109,9 @@ public class TestBank {
     @Test
     @DisplayName("getBalance() test under load from different accounts")
     void getBalanceOnLoadTest() {
-        Session session = SessionFactoryUtil.getSessionFactory().openSession();
-        try (session) {
+        try {
             long result = Stream.generate(() -> bank).limit(1_000_000).parallel()
-                    .mapToLong(a -> a.getBalance((new Random().nextInt(1000) + 1), session).longValue())
+                    .mapToLong(a -> a.getBalance((new Random().nextInt(1000) + 1)).longValue())
                     .sum();
             assertEquals(70_000_000_000L, result);
         } catch (RuntimeException e) {
@@ -111,10 +122,9 @@ public class TestBank {
     @Test
     @DisplayName("getBalance() test under load from one account")
     void getBalanceOnLoadTest2() {
-        Session session = SessionFactoryUtil.getSessionFactory().openSession();
-        try (session) {
+        try {
             long result = Stream.generate(() -> bank).limit(1_000_000).parallel()
-                    .mapToLong(a -> a.getBalance(1, session).longValue())
+                    .mapToLong(a -> a.getBalance(1).longValue())
                     .sum();
             assertEquals(70_000_000_000L, result);
         } catch (RuntimeException e) {
@@ -128,13 +138,15 @@ public class TestBank {
         Session session = SessionFactoryUtil.getSessionFactory().openSession();
         try (session) {
             ExecutorService executorService = Executors.newFixedThreadPool(5);
+            List<Callable<Object>> futures = new ArrayList<>();
             for (int i = 0; i < 50_000; i++) {
-                executorService.submit(bank.getRunnableTransfer(
-                        new Random().nextInt(999),
-                        new Random().nextInt(999),
-                        new Random().nextDouble() * 100_000));
+                futures.add(Executors.callable(bank.getRunnableTransfer(
+                        new Random().nextInt(1000) + 1,
+                        new Random().nextInt(1000) + 1,
+                        new Random().nextDouble() * 100_000)));
             }
-            executorService.awaitTermination(10, TimeUnit.MINUTES);
+            executorService.invokeAll(futures);
+            bank.executors.shutdownNow();
             Query<BigDecimal> query = session.createQuery("select sum(money) from Account");
             BigDecimal result = query.uniqueResult();
             assertEquals(0, new BigDecimal(70_000_000).compareTo(result));
@@ -152,12 +164,12 @@ public class TestBank {
             List<Callable<Object>> transfers = new ArrayList<>();
             for (int i = 0; i < 1_000; i++) {
                 transfers.add(Executors.callable(bank.getRunnableTransfer(
-                        new Random().nextInt(10),
-                        new Random().nextInt(10),
+                        new Random().nextInt(10) + 1,
+                        new Random().nextInt(10) + 1,
                         new Random().nextDouble() * 100_000), null));
             }
             executorService.invokeAll(transfers);
-            executorService.shutdown();
+            bank.executors.shutdownNow();
             Query<BigDecimal> query = session.createQuery("select sum(money) from Account");
             BigDecimal result = query.uniqueResult();
             assertEquals(0, new BigDecimal(70_000_000).compareTo(result));
@@ -222,38 +234,6 @@ public class TestBank {
             );
         }
     }
-
-    @Test
-    @DisplayName("transfer() test blocking before security check with one recipient at one time")
-    void transferOnLoadBlockingTest() {
-        Session session = sessionFactory.openSession();
-        try (session) {
-            long start = 0, end = 0;
-            Account account = session.get(Account.class, 2);
-            while (!(account.getMoney().compareTo(new BigDecimal(70000)) == 0 && account.isBlocked())) {
-                Transaction transaction = session.beginTransaction();
-                session.createQuery("update Account set money = 70000.00, isBlocked = false").executeUpdate();
-                transaction.commit();
-                bank.getAccounts().clear();
-                start = System.currentTimeMillis();
-                Stream.generate(() -> new Thread(bank.getRunnableTransfer(
-                        new Random().nextInt(1000), 2, 51000)))
-                        .limit(2).parallel()
-                        .peek(Thread::start)
-                        .forEach(thread -> {
-                            try {
-                                thread.join();
-                            } catch (InterruptedException e) {
-                                log.error(e);
-                            }
-                        });
-                end = System.currentTimeMillis();
-                session.clear();
-                account = session.get(Account.class, 2);
-            }
-            assertTrue((end - start) < 2000);
-        } catch (RuntimeException e) {
-            log.error(e);
-        }
-    }
 }
+
+
