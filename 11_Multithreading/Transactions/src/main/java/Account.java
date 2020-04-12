@@ -1,28 +1,17 @@
 import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.NonNull;
 
-import javax.persistence.*;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 
 @Data
-@Entity
-@NoArgsConstructor
 public class Account implements Comparable {
 
-    @NonNull
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer acc_number;
     volatile private BigDecimal money;
     volatile private boolean isBlocked;
-    @Transient
-    volatile private BigDecimal moneyInCheckCache = new BigDecimal(0).setScale(2, RoundingMode.HALF_UP);
-    @Transient
-    volatile private boolean isChecking;
 
-    Account(double money) {
+    Account(Integer acc_number, double money) {
+        this.acc_number = acc_number;
         this.money = BigDecimal.valueOf(money).setScale(2, RoundingMode.HALF_UP);
     }
 
@@ -42,25 +31,19 @@ public class Account implements Comparable {
         isBlocked = blocked;
     }
 
-    public synchronized BigDecimal getMoneyInCheckCache() {
-        return moneyInCheckCache;
-    }
-
-    public synchronized void setMoneyInCheckCache(BigDecimal moneyInCheckCache) {
-        this.moneyInCheckCache = moneyInCheckCache;
-    }
-
-    public synchronized boolean isChecking() {
-        return isChecking;
-    }
-
-    public synchronized void setChecking(boolean checking) {
-        isChecking = checking;
-    }
-
     @Override
     public int compareTo(Object o) {
         Account account = (Account) o;
         return Integer.compare(this.getAcc_number(), account.getAcc_number());
+    }
+
+    static class SyncAccs {
+        final Account syncAcc1;
+        final Account syncAcc2;
+
+        SyncAccs(Account from, Account to) {
+            syncAcc1 = from.compareTo(to) < 0 ? from : to;
+            syncAcc2 = from.compareTo(to) < 0 ? to : from;
+        }
     }
 }
