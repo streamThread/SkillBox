@@ -1,10 +1,12 @@
+package Bank;
+
 import lombok.Data;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 
 @Data
-public class Account implements Comparable {
+public class Account implements Comparable<Account> {
 
     private Integer acc_number;
     volatile private BigDecimal money;
@@ -32,9 +34,8 @@ public class Account implements Comparable {
     }
 
     @Override
-    public int compareTo(Object o) {
-        Account account = (Account) o;
-        return Integer.compare(this.getAcc_number(), account.getAcc_number());
+    public int compareTo(Account o) {
+        return Integer.compare(this.getAcc_number(), o.getAcc_number());
     }
 
     static class SyncAccs {

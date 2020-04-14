@@ -1,3 +1,5 @@
+package Bank;
+
 import lombok.Value;
 
 import java.math.BigDecimal;
