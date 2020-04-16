@@ -9,8 +9,8 @@ import java.math.RoundingMode;
 public class Account implements Comparable<Account> {
 
     private Integer acc_number;
-    volatile private BigDecimal money;
-    volatile private boolean isBlocked;
+    private BigDecimal money;
+    private boolean isBlocked;
 
     Account(Integer acc_number, double money) {
         this.acc_number = acc_number;
@@ -21,8 +21,12 @@ public class Account implements Comparable<Account> {
         return money;
     }
 
-    public synchronized void setMoney(BigDecimal money) {
-        this.money = money;
+    public synchronized void addMoney(BigDecimal money) {
+        this.money = this.money.add(money);
+    }
+
+    public synchronized void withdrawMoney(BigDecimal money) {
+        this.money = this.money.subtract(money);
     }
 
     public synchronized boolean isBlocked() {

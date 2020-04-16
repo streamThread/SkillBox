@@ -1,7 +1,7 @@
 package Bank;
 
+import Bank.Bank.TransferStatus;
 import lombok.extern.log4j.Log4j2;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -10,33 +10,24 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.stream.Stream;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @Log4j2
 public class TestBank {
 
     private static Bank bank;
 
-    @BeforeAll
-    static void beforeInit() {
-        bank = new Bank();
-        for (int i = 1; i < 100_001; i++) {
-            bank.getACCOUNTS().put(i, new Account(i, 70000d));
-        }
-    }
-
     @BeforeEach
     void init() {
-        bank.getACCOUNTS().values().forEach(a -> {
-            a.setMoney(new BigDecimal(70000));
-            a.setBlocked(false);
-        });
+        ConcurrentHashMap<Integer, Account> accounts = new ConcurrentHashMap<>();
+        for (int i = 1; i < 100_001; i++) {
+            accounts.put(i, new Account(i, 70000d));
+        }
+        bank = new Bank(accounts);
     }
 
     @Test
@@ -53,9 +44,8 @@ public class TestBank {
                             log.error(e);
                         }
                     });
-            bank.SECURITY_SERVICE.executorService.awaitTermination(1, TimeUnit.MINUTES);
-            bank.TRANSFER_SERVICE.executorService.shutdownNow();
-            BigDecimal result = bank.getACCOUNTS().values().stream()
+            bank.shutDownBankServices(1, TimeUnit.MINUTES);
+            BigDecimal result = bank.getAccounts().values().stream()
                     .map(Account::getMoney)
                     .reduce(new BigDecimal(0), BigDecimal::add);
             assertEquals(0, new BigDecimal(7000_000_000L).compareTo(result));
@@ -96,9 +86,8 @@ public class TestBank {
                 }));
             }
             executorService.invokeAll(futures);
-            bank.SECURITY_SERVICE.executorService.awaitTermination(1, TimeUnit.MINUTES);
-            bank.TRANSFER_SERVICE.executorService.shutdownNow();
-            BigDecimal result = bank.getACCOUNTS().values().stream()
+            bank.shutDownBankServices(1, TimeUnit.MINUTES);
+            BigDecimal result = bank.getAccounts().values().stream()
                     .map(Account::getMoney)
                     .reduce(new BigDecimal(0), BigDecimal::add);
             assertEquals(0, new BigDecimal(7000_000_000L).compareTo(result));
@@ -111,29 +100,17 @@ public class TestBank {
     @DisplayName("simple transfer() test")
     void transferTest() {
         try {
-            bank.transfer(3, 4, 42000.54);
-            BigDecimal accFromResultMoney = bank.getACCOUNTS().get(3).getMoney();
-            BigDecimal accToResultMoney = bank.getACCOUNTS().get(4).getMoney();
+            TransferStatus transferStatus = bank.transfer(3, 4, 42000.54);
+            BigDecimal accFromResultMoney = bank.getAccounts().get(3).getMoney();
+            BigDecimal accToResultMoney = bank.getAccounts().get(4).getMoney();
             Thread.sleep(3000);
             assertAll(
                     "simple transfer() test",
                     () -> assertEquals(0, BigDecimal.valueOf(27999.46).compareTo(accFromResultMoney), "Money is wrong at 'from' acc in cache"),
-                    () -> assertEquals(0, BigDecimal.valueOf(112000.54).compareTo(accToResultMoney), "Money is wrong at 'to' acc in cache")
+                    () -> assertEquals(0, BigDecimal.valueOf(112000.54).compareTo(accToResultMoney), "Money is wrong at 'to' acc in cache"),
+                    () -> assertEquals(TransferStatus.COMMITED, transferStatus, "wrong transfer status returned")
             );
         } catch (RuntimeException | InterruptedException ex) {
-            log.error(ex);
-        }
-    }
-
-    @Test
-    @DisplayName("transfer() Exeption test")
-    void transferTest2() {
-        try {
-            Throwable exception = assertThrows(IllegalArgumentException.class, () -> {
-                bank.transfer(3, 3, 22000.54);
-            });
-            assertEquals("The sender and recipient accounts must be different", exception.getMessage());
-        } catch (RuntimeException ex) {
             log.error(ex);
         }
     }
@@ -142,19 +119,16 @@ public class TestBank {
     @DisplayName("transfer() blocking test")
     void transferTest3() {
         try {
-            bank.getACCOUNTS().get(1).setBlocked(true);
-            bank.transfer(1, 2, 22000.54);
-            bank.transfer(3, 4, 80000);
-            BigDecimal acc1ResultMoney = bank.getACCOUNTS().get(1).getMoney();
-            BigDecimal acc2ResultMoney = bank.getACCOUNTS().get(2).getMoney();
-            BigDecimal acc3ResultMoney = bank.getACCOUNTS().get(3).getMoney();
-            BigDecimal acc43ResultMoney = bank.getACCOUNTS().get(4).getMoney();
-            Thread.sleep(3000);
+            bank.getAccounts().get(1).setBlocked(true);
+            TransferStatus transferStatus1 = bank.transfer(1, 2, 22000.54);
+            TransferStatus transferStatus2 = bank.transfer(3, 4, 80000);
+            TransferStatus transferStatus3 = bank.transfer(5, 5, 10000);
+            Thread.sleep(5000);
             assertAll(
                     "transfer() blocking test",
-                    () -> assertEquals(0, acc1ResultMoney.compareTo(acc2ResultMoney), "Blocked acc must not to do transfer"),
-                    () -> assertEquals(0, acc3ResultMoney.compareTo(acc43ResultMoney), "Insufficient funds blocking not works")
-            );
+                    () -> assertEquals(TransferStatus.IS_BLOCKED, transferStatus1, "Blocked acc must not to do transfer"),
+                    () -> assertEquals(TransferStatus.INSUFFICIENT_FUNDS, transferStatus2, "Insufficient funds blocking not works"),
+                    () -> assertEquals(TransferStatus.BLOCKED_ACCOUNTS_ARE_THE_SAME, transferStatus3, "The sender and recipient accounts must be different"));
         } catch (RuntimeException | InterruptedException e) {
             log.error(e);
         }

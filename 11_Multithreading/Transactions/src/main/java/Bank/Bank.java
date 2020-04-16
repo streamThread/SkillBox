@@ -5,20 +5,27 @@ import lombok.extern.log4j.Log4j2;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.*;
 
 @Log4j2
 public class Bank {
 
-    final SecurityService SECURITY_SERVICE = new SecurityService();
-    final TransferService TRANSFER_SERVICE = new TransferService();
+
     private final BigDecimal MINIMUM_AMOUNT_TO_SEND_FOR_VERIFICATION = new BigDecimal(50000);
     private final Random RANDOM = new Random();
-    private final ConcurrentHashMap<Integer, Account> ACCOUNTS = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<Integer, Account> ACCOUNTS;
+    private SecurityService securityService = new SecurityService();
+    private TransferService transferService = new TransferService();
 
-    public ConcurrentHashMap<Integer, Account> getACCOUNTS() {
-        return ACCOUNTS;
+    Bank(ConcurrentHashMap<Integer, Account> accounts) {
+        ACCOUNTS = accounts;
+    }
+
+    public Map<Integer, Account> getAccounts() {
+        return new HashMap<>(ACCOUNTS);
     }
 
     private synchronized boolean isFraud(String fromAccountNum, String toAccountNum, long amount)
@@ -27,10 +34,11 @@ public class Bank {
         return RANDOM.nextBoolean();
     }
 
-    public void transfer(Integer fromAccountNum, Integer toAccountNum, double amountIn) throws InterruptedException {
+    public TransferStatus transfer(Integer fromAccountNum, Integer toAccountNum, double amountIn) throws InterruptedException {
 
         if (fromAccountNum.equals(toAccountNum)) {
-            throw new IllegalArgumentException("The sender and recipient accounts must be different");
+            log.info("The sender and recipient accounts must be different");
+            return TransferStatus.BLOCKED_ACCOUNTS_ARE_THE_SAME;
         }
 
         Account from = ACCOUNTS.get(fromAccountNum);
@@ -42,32 +50,33 @@ public class Bank {
 
         synchronized (syncAccs.syncAcc1) {
             synchronized (syncAccs.syncAcc2) {
-                    doSimpleCheck(from, to, amount);
+                return checkAndSendTransferToProperService(from, to, amount);
             }
         }
     }
 
-    private void doSimpleCheck(Account from, Account to, BigDecimal amount) throws InterruptedException {
+    private TransferStatus checkAndSendTransferToProperService(Account from, Account to, BigDecimal amount) throws InterruptedException {
         if (from.isBlocked() || to.isBlocked()) {
             log.info("The transfer cannot be completed. One of the accounts is blocked" +
                     " or checking by security service");
-            return;
+            return TransferStatus.IS_BLOCKED;
         }
         if (from.getMoney().compareTo(amount) <= 0) {
             log.info("Insufficient funds for transfer");
-            return;
+            return TransferStatus.INSUFFICIENT_FUNDS;
         }
         Transaction transaction = new Transaction(from, to, amount);
         if (amount.compareTo(MINIMUM_AMOUNT_TO_SEND_FOR_VERIFICATION) < 0) {
-            TRANSFER_SERVICE.TRANSACTIONS.put(transaction);
+            transferService.transactions.put(transaction);
             log.debug(String.format("%s sent to Transfer_Service",
                     transaction.toString()));
-            return;
+            return TransferStatus.COMMITED;
         }
         from.setBlocked(true);
         to.setBlocked(true);
-        SECURITY_SERVICE.TRANSACTIONS_TO_CHECK.put(transaction);
+        securityService.transactionsToCheck.put(transaction);
         log.info("Sending transaction to verification. Please, wait...");
+        return TransferStatus.SENT_TO_SECURITY_SERVICE;
     }
 
     public BigDecimal getBalance(Integer accountNum) {
@@ -75,10 +84,26 @@ public class Bank {
         return account.getMoney();
     }
 
+    void shutDownBankServices(int afterThisTimeValue, TimeUnit timeUnit) throws InterruptedException {
+        securityService.executorService.awaitTermination(afterThisTimeValue, timeUnit);
+        securityService.executorService.shutdown();
+        transferService.executorService.shutdown();
+        securityService.executorService.awaitTermination(1000, TimeUnit.MILLISECONDS);
+        transferService.executorService.awaitTermination(1000, TimeUnit.MILLISECONDS);
+    }
+
+    enum TransferStatus {
+        BLOCKED_ACCOUNTS_ARE_THE_SAME,
+        IS_BLOCKED,
+        INSUFFICIENT_FUNDS,
+        COMMITED,
+        SENT_TO_SECURITY_SERVICE
+    }
+
     class SecurityService implements Runnable {
 
-        private final BlockingQueue<Transaction> TRANSACTIONS_TO_CHECK = new LinkedBlockingQueue<>();
-        ExecutorService executorService = Executors.newSingleThreadExecutor();
+        private ExecutorService executorService = Executors.newSingleThreadExecutor();
+        private BlockingQueue<Transaction> transactionsToCheck = new LinkedBlockingQueue<>();
 
         SecurityService() {
             executorService.submit(this);
@@ -87,8 +112,8 @@ public class Bank {
         @SneakyThrows(InterruptedException.class)
         @Override
         public void run() {
-            while (true) {
-                Transaction transaction = TRANSACTIONS_TO_CHECK.take();
+            while (!Thread.currentThread().isInterrupted()) {
+                Transaction transaction = transactionsToCheck.take();
                 Account from = transaction.getFrom();
                 Account to = transaction.getTo();
                 BigDecimal amount = transaction.getAmount();
@@ -108,8 +133,9 @@ public class Bank {
                         }
                     }
                     log.error("SecurityService isFraud error", e);
+                    break;
                 }
-                TRANSFER_SERVICE.TRANSACTIONS.putFirst(transaction);
+                transferService.transactions.putFirst(transaction);
                 log.debug(String.format("%s was approved by Security_Service and sent to Transfer_Service",
                         transaction.toString()));
             }
@@ -118,8 +144,8 @@ public class Bank {
 
     class TransferService implements Runnable {
 
-        private final BlockingDeque<Transaction> TRANSACTIONS = new LinkedBlockingDeque<>();
-        ExecutorService executorService = Executors.newFixedThreadPool(5);
+        private ExecutorService executorService = Executors.newFixedThreadPool(5);
+        private BlockingDeque<Transaction> transactions = new LinkedBlockingDeque<>();
 
         TransferService() {
             executorService.submit(this);
@@ -128,16 +154,16 @@ public class Bank {
         @SneakyThrows(InterruptedException.class)
         @Override
         public void run() {
-            while (true) {
-                Transaction transaction = TRANSACTIONS.take();
+            while (!Thread.currentThread().isInterrupted()) {
+                Transaction transaction = transactions.take();
                 Account from = transaction.getFrom();
                 Account to = transaction.getTo();
                 BigDecimal amount = transaction.getAmount();
                 Account.SyncAccs syncAccs = new Account.SyncAccs(from, to);
                 synchronized (syncAccs.syncAcc1) {
                     synchronized (syncAccs.syncAcc2) {
-                        from.setMoney(from.getMoney().subtract(amount));
-                        to.setMoney(to.getMoney().add(amount));
+                        from.withdrawMoney(amount);
+                        to.addMoney(amount);
                     }
                 }
                 log.info(String.format("Money sent from %s to %s: %.2f у.е.",
