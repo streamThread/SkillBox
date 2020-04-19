@@ -1,3 +1,4 @@
+import lombok.extern.log4j.Log4j2;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -6,47 +7,46 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.RecursiveTask;
 
-public class Parser extends RecursiveTask<StringBuffer> {
+@Log4j2
+public class Parser extends RecursiveTask<ParseResults> {
 
+    private static String mainUrl;
     private static Set<String> allreadyParsed = Collections.synchronizedSet(new HashSet<>());
     private final String URL;
-    private Set<String> parsedUrls = new HashSet<>();
-    private StringBuffer url = new StringBuffer();
+    private ParseResults parseResults;
 
     Parser(String url) {
         URL = url;
+        parseResults = new ParseResults(url);
+        if (mainUrl == null) {
+            mainUrl = url;
+        }
     }
 
     @Override
-    protected StringBuffer compute() {
+    protected ParseResults compute() {
+
+        Document document;
 
         try {
             Thread.sleep(new Random().nextInt(100) + 100);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-            return null;
-        }
-
-        Document document;
-        try {
             document = Jsoup.connect(URL).maxBodySize(0).get();
-        } catch (IOException e) {
-            e.printStackTrace();
+        } catch (IOException | InterruptedException e) {
+            log.error(e);
             return null;
         }
 
         for (Element e : document.select("[href]")) {
             String absUrl = e.absUrl("href");
-            if (!absUrl.equals(URL) && absUrl.startsWith("https://lenta.ru") && allreadyParsed.add(absUrl)) {
-                parsedUrls.add(absUrl);
-                url.append(URL+"\n\t"+absUrl);
+            if (!absUrl.equals(URL) && !absUrl.equals(URL + "/") && absUrl.startsWith(mainUrl) && allreadyParsed.add(absUrl)) {
+                parseResults.urls.add(absUrl);
             }
         }
 
-        ArrayList<Parser> parsers = new ArrayList();
+        ArrayList<Parser> parsers = new ArrayList<>();
 
-        if (!parsedUrls.isEmpty()) {
-            for (String str : parsedUrls) {
+        if (!parseResults.urls.isEmpty()) {
+            for (String str : parseResults.urls) {
                 parsers.add(new Parser(str));
             }
         } else return null;
@@ -56,12 +56,12 @@ public class Parser extends RecursiveTask<StringBuffer> {
         }
 
         for (Parser parser : parsers) {
-            StringBuffer sb;
-            if ((sb = parser.join()) != null) {
-                    url.append("\n\t" + sb);
-                }
+            ParseResults joinParseResults = parser.join();
+            if (joinParseResults == null) {
+                continue;
             }
-        System.out.println(url);
-        return url;
+            parseResults.parseResultsMap.put(parser.URL, joinParseResults);
+        }
+        return parseResults.urls.isEmpty() ? null : parseResults;
     }
 }
