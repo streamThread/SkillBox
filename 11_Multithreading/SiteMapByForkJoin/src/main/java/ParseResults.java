@@ -1,4 +1,7 @@
+import lombok.AccessLevel;
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -6,14 +9,18 @@ import java.util.Iterator;
 import java.util.Map;
 
 @Data
-public class ParseResults {
+class ParseResults {
 
-    String url;
-    HashSet<String> urls = new HashSet<>();
-    Map<String, ParseResults> parseResultsMap = new HashMap<>();
+    @Getter(AccessLevel.NONE)
+    private final String URL;
+    @Setter(AccessLevel.NONE)
+    private HashSet<String> urls = new HashSet<>();
+    @Setter(AccessLevel.NONE)
+    private Map<String, ParseResults> parseResultsMap = new HashMap<>();
+    private boolean isEmpty;
 
     ParseResults(String url) {
-        this.url = url;
+        URL = url;
     }
 
     public StringBuilder toStringBuilder(StringBuilder stringBuilder, int i) {
@@ -21,7 +28,7 @@ public class ParseResults {
             return stringBuilder;
         }
         if (i == 0) {
-            stringBuilder.append(url);
+            stringBuilder.append(URL);
         }
         Iterator<String> iterator = urls.iterator();
         while (iterator.hasNext()) {

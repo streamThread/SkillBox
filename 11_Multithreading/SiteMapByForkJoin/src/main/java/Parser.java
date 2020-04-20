@@ -33,23 +33,28 @@ public class Parser extends RecursiveTask<ParseResults> {
             document = Jsoup.connect(URL).maxBodySize(0).get();
         } catch (IOException | InterruptedException e) {
             log.error(e);
-            return null;
+            parseResults.setEmpty(true);
+            return parseResults;
         }
 
-        for (Element e : document.select("[href]")) {
+        for (Element e : document.select("a[href]")) {
             String absUrl = e.absUrl("href");
-            if (!absUrl.equals(URL) && !absUrl.equals(URL + "/") && absUrl.startsWith(mainUrl) && allreadyParsed.add(absUrl)) {
-                parseResults.urls.add(absUrl);
+            if (!absUrl.equals(URL) && !absUrl.equals(URL + "/") && absUrl.startsWith(mainUrl)) {
+                parseResults.getUrls().add(absUrl);
             }
         }
 
         ArrayList<Parser> parsers = new ArrayList<>();
 
-        if (!parseResults.urls.isEmpty()) {
-            for (String str : parseResults.urls) {
-                parsers.add(new Parser(str));
+        if (!parseResults.getUrls().isEmpty()) {
+            for (String str : parseResults.getUrls()) {
+                if (allreadyParsed.add(str) && !str.contains("#"))
+                    parsers.add(new Parser(str));
             }
-        } else return null;
+        } else {
+            parseResults.setEmpty(true);
+            return parseResults;
+        }
 
         for (Parser parser : parsers) {
             parser.fork();
@@ -57,11 +62,11 @@ public class Parser extends RecursiveTask<ParseResults> {
 
         for (Parser parser : parsers) {
             ParseResults joinParseResults = parser.join();
-            if (joinParseResults == null) {
+            if (joinParseResults.isEmpty()) {
                 continue;
             }
-            parseResults.parseResultsMap.put(parser.URL, joinParseResults);
+            parseResults.getParseResultsMap().put(parser.URL, joinParseResults);
         }
-        return parseResults.urls.isEmpty() ? null : parseResults;
+        return parseResults;
     }
 }

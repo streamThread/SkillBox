@@ -11,7 +11,7 @@ public class Main {
             ForkJoinPool fjp = new ForkJoinPool();
             RecursiveTask<ParseResults> recursiveTask = new Parser("https://skillbox.ru");
             ParseResults parseResults = fjp.invoke(recursiveTask);
-            printTextFile(parseResults, "11_Multithreading/SiteMapByForkJoin/src/main/resources/test.txt");
+            printTextFile(parseResults, "11_Multithreading/SiteMapByForkJoin/src/main/resources/map.txt");
         } catch (IOException e) {
             e.printStackTrace();
         }
