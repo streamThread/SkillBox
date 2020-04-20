@@ -8,18 +8,20 @@ import java.util.*;
 import java.util.concurrent.RecursiveTask;
 
 @Log4j2
-public class Parser extends RecursiveTask<ParseResults> {
+public class Parser extends RecursiveTask<Parser.ParseResults> {
 
     private static String mainUrl;
     private static Set<String> allreadyParsed = Collections.synchronizedSet(new HashSet<>());
-    private final String URL;
     private ParseResults parseResults;
 
     Parser(String url) {
-        URL = url;
+        if (!url.endsWith("/")) {
+            url += "/";
+        }
         parseResults = new ParseResults(url);
         if (mainUrl == null) {
             mainUrl = url;
+            allreadyParsed.add(url);
         }
     }
 
@@ -30,29 +32,32 @@ public class Parser extends RecursiveTask<ParseResults> {
 
         try {
             Thread.sleep(new Random().nextInt(100) + 100);
-            document = Jsoup.connect(URL).maxBodySize(0).get();
+            document = Jsoup.connect(parseResults.URL).maxBodySize(0).get();
         } catch (IOException | InterruptedException e) {
             log.error(e);
-            parseResults.setEmpty(true);
+            parseResults.isEmpty = true;
             return parseResults;
         }
 
         for (Element e : document.select("a[href]")) {
             String absUrl = e.absUrl("href");
-            if (!absUrl.equals(URL) && !absUrl.equals(URL + "/") && absUrl.startsWith(mainUrl)) {
-                parseResults.getUrls().add(absUrl);
+            if (!absUrl.endsWith("/")) {
+                absUrl += "/";
+            }
+            if (!absUrl.equals(parseResults.URL) && absUrl.startsWith(mainUrl)) {
+                parseResults.urlsSet.add(absUrl);
             }
         }
 
         ArrayList<Parser> parsers = new ArrayList<>();
 
-        if (!parseResults.getUrls().isEmpty()) {
-            for (String str : parseResults.getUrls()) {
+        if (!parseResults.urlsSet.isEmpty()) {
+            for (String str : parseResults.urlsSet) {
                 if (allreadyParsed.add(str) && !str.contains("#"))
                     parsers.add(new Parser(str));
             }
         } else {
-            parseResults.setEmpty(true);
+            parseResults.isEmpty =true;
             return parseResults;
         }
 
@@ -62,11 +67,47 @@ public class Parser extends RecursiveTask<ParseResults> {
 
         for (Parser parser : parsers) {
             ParseResults joinParseResults = parser.join();
-            if (joinParseResults.isEmpty()) {
+            if (joinParseResults.isEmpty) {
                 continue;
             }
-            parseResults.getParseResultsMap().put(parser.URL, joinParseResults);
+            parseResults.parseResultsMap.put(parser.parseResults.URL, joinParseResults);
         }
         return parseResults;
+    }
+
+    class ParseResults {
+
+        private final String URL;
+        private HashSet<String> urlsSet = new HashSet<>();
+        private Map<String, ParseResults> parseResultsMap = new HashMap<>();
+        private boolean isEmpty;
+
+        ParseResults(String url) {
+            URL = url;
+        }
+
+        public StringBuilder toStringBuilder(StringBuilder stringBuilder, int i) {
+            if (urlsSet.isEmpty()) {
+                return stringBuilder;
+            }
+            if (i == 0) {
+                stringBuilder.append(URL);
+            }
+            Iterator<String> iterator = urlsSet.iterator();
+            while (iterator.hasNext()) {
+                String urlKey = iterator.next();
+                stringBuilder.append("\n");
+                for (int j = 0; j <= i; j++) {
+                    stringBuilder.append("\t");
+                }
+                stringBuilder.append(urlKey);
+                ParseResults parseResults = parseResultsMap.get(urlKey);
+                if (parseResults != null) {
+                    int count = i;
+                    parseResults.toStringBuilder(stringBuilder, ++count);
+                }
+            }
+            return stringBuilder;
+        }
     }
 }
