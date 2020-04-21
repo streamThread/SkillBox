@@ -35,12 +35,15 @@ public class Parser extends RecursiveTask<Parser.ParseResults> {
             document = Jsoup.connect(parseResults.URL).maxBodySize(0).get();
         } catch (IOException | InterruptedException e) {
             log.error(e);
-            parseResults.isEmpty = true;
             return parseResults;
         }
 
         for (Element e : document.select("a[href]")) {
             String absUrl = e.absUrl("href");
+            if (absUrl.endsWith(".jpg") || absUrl.endsWith(".pdf") || absUrl.contains("#")
+            || absUrl.endsWith(".png")) {
+                continue;
+            }
             if (!absUrl.endsWith("/")) {
                 absUrl += "/";
             }
@@ -53,11 +56,10 @@ public class Parser extends RecursiveTask<Parser.ParseResults> {
 
         if (!parseResults.urlsSet.isEmpty()) {
             for (String str : parseResults.urlsSet) {
-                if (allreadyParsed.add(str) && !str.contains("#"))
+                if (allreadyParsed.add(str))
                     parsers.add(new Parser(str));
             }
         } else {
-            parseResults.isEmpty =true;
             return parseResults;
         }
 
@@ -67,7 +69,7 @@ public class Parser extends RecursiveTask<Parser.ParseResults> {
 
         for (Parser parser : parsers) {
             ParseResults joinParseResults = parser.join();
-            if (joinParseResults.isEmpty) {
+            if (joinParseResults.isEmpty()) {
                 continue;
             }
             parseResults.parseResultsMap.put(parser.parseResults.URL, joinParseResults);
@@ -80,10 +82,13 @@ public class Parser extends RecursiveTask<Parser.ParseResults> {
         private final String URL;
         private HashSet<String> urlsSet = new HashSet<>();
         private Map<String, ParseResults> parseResultsMap = new HashMap<>();
-        private boolean isEmpty;
 
         ParseResults(String url) {
             URL = url;
+        }
+
+        public boolean isEmpty(){
+            return parseResultsMap.isEmpty() && urlsSet.isEmpty();
         }
 
         public StringBuilder toStringBuilder(StringBuilder stringBuilder, int i) {
@@ -96,7 +101,7 @@ public class Parser extends RecursiveTask<Parser.ParseResults> {
             Iterator<String> iterator = urlsSet.iterator();
             while (iterator.hasNext()) {
                 String urlKey = iterator.next();
-                stringBuilder.append("\n");
+                stringBuilder.append("\r\n");
                 for (int j = 0; j <= i; j++) {
                     stringBuilder.append("\t");
                 }
