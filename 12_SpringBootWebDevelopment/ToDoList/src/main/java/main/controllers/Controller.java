@@ -11,10 +11,8 @@ public class Controller {
 
     @GetMapping("/")
     public String getMainPage() {
-        boolean choice = new Random().nextBoolean();
-        if (choice) {
-            return String.valueOf(new Random().nextInt(1000));
-        }
-        return new Date().toString();
+        return new Random().nextBoolean() ?
+                String.valueOf(new Random().nextInt(1000)) :
+                new Date().toString();
     }
 }
