@@ -2,10 +2,7 @@ package main;
 
 import main.response.Action;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 
 public class Storage {
 
@@ -19,10 +16,17 @@ public class Storage {
         return new HashMap<>(actionStorage);
     }
 
-    public static synchronized int putActionInStorage(Action action) {
-        int tempID = ID;
+    public static synchronized Map<Integer, Action> getAllActionsPaginated(Integer start, Integer size) {
+        SortedMap<Integer, Action> actionMap = new TreeMap<>(actionStorage);
+        if (size >= actionMap.size()) {
+            return actionMap;
+        }
+        return actionMap.subMap(start, start + size);
+    }
+
+    public static synchronized Integer putActionInStorage(Action action) {
         actionStorage.put(ID++, action);
-        return tempID;
+        return ID - 1;
     }
 
     public static synchronized Action getActionFromStorage(Integer id) {
@@ -47,7 +51,7 @@ public class Storage {
         actionStorage.clear();
     }
 
-    public static Action replaceActionInStorage(int id, Action action) {
+    public static Action replaceActionInStorage(Integer id, Action action) {
         return actionStorage.put(id, action);
     }
 }
