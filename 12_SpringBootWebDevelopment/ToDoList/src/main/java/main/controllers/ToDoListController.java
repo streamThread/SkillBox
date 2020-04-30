@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
 import java.util.Map;
+import java.util.TreeMap;
 
 @RestController
 @Api(tags = "ToDo List")
@@ -26,11 +27,10 @@ public class ToDoListController {
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Map<Integer, Action>> getAllActions(@RequestParam(value = "start", required = false) Integer start,
                                                               @RequestParam(value = "size", required = false) Integer size) {
-        if (start == null || size == null) {
-            return ResponseEntity.ok(Storage.getAllActionsFromStorage());
-        }
-        if (start < 1 || size < 1) {
-            return ResponseEntity.badRequest().body(null);
+        if (start != null && size != null) {
+            if (start < 1 || size < 1) {
+                return ResponseEntity.badRequest().body(null);
+            }
         }
         return ResponseEntity.ok(Storage.getAllActionsPaginated(start, size));
     }
@@ -45,6 +45,16 @@ public class ToDoListController {
                     HttpStatus.OK);
         }
         return ResponseEntity.notFound().build();
+    }
+
+    @ApiOperation(value = "returns action by search text (if action contains that text)")
+    @GetMapping(value = "search", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Map<Integer, Action>> getAction(@RequestParam String query) {
+        Map<Integer, Action> integerActionMap = new TreeMap<>(Storage.getAllActionsBySearchString(query));
+        if (integerActionMap.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(integerActionMap);
     }
 
     @ApiOperation(value = "add action to the list")

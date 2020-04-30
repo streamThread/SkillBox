@@ -2,7 +2,11 @@ package main;
 
 import main.response.Action;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 public class Storage {
 
@@ -13,15 +17,24 @@ public class Storage {
     }
 
     public static synchronized Map<Integer, Action> getAllActionsFromStorage() {
-        return new HashMap<>(actionStorage);
+        return new TreeMap<>(actionStorage);
     }
 
     public static synchronized Map<Integer, Action> getAllActionsPaginated(Integer start, Integer size) {
-        SortedMap<Integer, Action> actionMap = new TreeMap<>(actionStorage);
-        if (size >= actionMap.size()) {
-            return actionMap;
+        TreeMap<Integer, Action> integerActionTreeMap = (TreeMap<Integer, Action>) getAllActionsFromStorage();
+        if (start == null || size == null) {
+            return integerActionTreeMap;
         }
-        return actionMap.subMap(start, start + size);
+        if (size >= integerActionTreeMap.size()) {
+            return integerActionTreeMap;
+        }
+        return integerActionTreeMap.subMap(start, start + size);
+    }
+
+    public static synchronized Map<Integer, Action> getAllActionsBySearchString(String query) {
+        return getAllActionsFromStorage().entrySet().stream()
+                .filter(a -> a.getValue().getContent().contains(query))
+                .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
     }
 
     public static synchronized Integer putActionInStorage(Action action) {
