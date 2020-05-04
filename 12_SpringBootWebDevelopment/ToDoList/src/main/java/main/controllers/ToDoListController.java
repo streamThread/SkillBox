@@ -2,105 +2,120 @@ package main.controllers;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
-import main.Storage;
-import main.response.Action;
+import io.swagger.annotations.ApiParam;
+import main.model.Action;
+import main.model.ActionRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.List;
 
 @RestController
 @Api(tags = "ToDo List")
 @RequestMapping("/actions/")
 public class ToDoListController {
 
+    private final ActionRepository actionRepository;
+
     HttpHeaders httpHeaders = new HttpHeaders();
 
-    {
+    @Autowired
+    ToDoListController(ActionRepository actionRepository) {
         httpHeaders.setCacheControl(CacheControl.noCache());
         httpHeaders.setPragma("no-cache");
+        this.actionRepository = actionRepository;
     }
 
-    @ApiOperation(value = "returns list of actions. Simple pagination available. You can optionally set the start and sample size")
+    @ApiOperation(value = "returns list of actions. Simple pagination available. You can optionally set the " +
+            "start and sample size")
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Map<Integer, Action>> getAllActions(@RequestParam(value = "start", required = false) Integer start,
-                                                              @RequestParam(value = "size", required = false) Integer size) {
-        if (start != null && size != null) {
-            if (start < 1 || size < 1) {
-                return ResponseEntity.badRequest().body(null);
-            }
+    public ResponseEntity<List<Action>> getAllActions(@ApiParam(value = "Number of page that you want to see. " +
+            "Numerate starts with zero")
+                                                      @RequestParam(required = false) Integer pageNumber,
+                                                      @ApiParam(value = "Action's count on page")
+                                                      @RequestParam(required = false) Integer pageSize) {
+        if (pageNumber == null || pageSize == null) {
+            return ResponseEntity.ok(actionRepository.findAllByOrderById());
         }
-        return ResponseEntity.ok(Storage.getAllActionsPaginated(start, size));
+        return ResponseEntity.ok()
+                .body(actionRepository.findBy(PageRequest.of(pageNumber, pageSize, Sort.by("id"))).getContent());
     }
 
     @ApiOperation(value = "returns action by requested id")
     @GetMapping(value = "{id}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Action> getAction(@PathVariable Integer id) {
-        Action action = Storage.getActionFromStorage(id);
-        if (action != null) {
-            return new ResponseEntity<>(action,
-                    httpHeaders,
-                    HttpStatus.OK);
-        }
-        return ResponseEntity.notFound().build();
+    public ResponseEntity<Action> getAction(@ApiParam(value = "id of the search action", required = true)
+                                            @PathVariable Integer id) {
+        return actionRepository.findById(id)
+                .map(action -> new ResponseEntity<>(action, httpHeaders, HttpStatus.OK))
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @ApiOperation(value = "returns action by search text (if action contains that text)")
     @GetMapping(value = "search", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Map<Integer, Action>> getAction(@RequestParam String query) {
-        Map<Integer, Action> integerActionMap = new TreeMap<>(Storage.getAllActionsBySearchString(query));
-        if (integerActionMap.isEmpty()) {
-            return ResponseEntity.notFound().build();
+    public ResponseEntity<List<Action>> getAction(@ApiParam(
+            value = "text to search in the actions of ToDo list", required = true)
+                                                  @RequestParam String query,
+                                                  @ApiParam(value = "Number of page that you want to see. " +
+                                                          "Numerate starts with zero")
+                                                  @RequestParam(required = false) Integer pageNumber,
+                                                  @ApiParam(value = "Action's count on page")
+                                                  @RequestParam(required = false) Integer pageSize) {
+        if (pageNumber == null || pageSize == null) {
+            return actionRepository.findByContentContaining(query, Sort.by("id"))
+                    .map(ResponseEntity::ok)
+                    .orElse(ResponseEntity.notFound().build());
         }
-        return ResponseEntity.ok(integerActionMap);
+        return actionRepository.findByContentContaining(query, PageRequest.of(pageNumber, pageSize, Sort.by("id")))
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 
     @ApiOperation(value = "add action to the list")
     @PostMapping(produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Integer> putAction(Action action) {
-        Integer id = Storage.putActionInStorage(action);
+    public ResponseEntity<Integer> putAction(@ApiParam(value = "content of the new action to add", required = true)
+                                             @RequestParam String content,
+                                             @ApiParam(value = "adding time of the new action", required = true)
+                                             @RequestParam Long timeStamp) {
+        Integer id = actionRepository.save(new Action(content, timeStamp)).getId();
         return ResponseEntity.created(URI.create(String.format("/actions/%d", id))).body(id);
     }
 
     @ApiOperation(value = "add action by id to the list (removes old action`s value by this id)")
     @PutMapping(value = "{id}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Action> replaceAction(@PathVariable Integer id, Action action) {
-        synchronized (Storage.class) {
-            if (id > Storage.getAllActionsFromStorage().size() + 1 || id < 1) {
-                return ResponseEntity.badRequest().body(null);
-            }
-            if (Storage.replaceActionInStorage(id, action) == null) {
-                return ResponseEntity.notFound().build();
-            }
-            return ResponseEntity.noContent().build();
+    public ResponseEntity<Action> replaceAction(@ApiParam(value = "id of the new action to add", required = true)
+                                                @PathVariable Integer id,
+                                                @ApiParam(value = "content of the new action", required = true)
+                                                @RequestParam String content,
+                                                @ApiParam(value = "adding time of the new action", required = true)
+                                                @RequestParam Long timeStamp) {
+        if (actionRepository.existsById(id)) {
+            actionRepository.save(new Action(id, content, timeStamp));
+            return ResponseEntity.created(URI.create(String.format("/actions/%d", id))).body(null);
         }
+        return ResponseEntity.notFound().build();
     }
+
 
     @ApiOperation(value = "delete action by id")
     @DeleteMapping(value = "{id}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Action> deleteAction(@PathVariable Integer id) {
-        synchronized (Storage.class) {
-            if (id > Storage.getAllActionsFromStorage().size() + 1 || id < 1) {
-                return ResponseEntity.badRequest().body(null);
-            }
-            if (Storage.deleteActionFromStorage(id)) {
-                return ResponseEntity.noContent().build();
-            }
-            return ResponseEntity.notFound().build();
+    public ResponseEntity<Action> deleteAction(@ApiParam(value = "id of the action to delete", required = true)
+                                               @PathVariable Integer id) {
+        if (actionRepository.existsById(id)) {
+            actionRepository.deleteById(id);
+            return ResponseEntity.ok().body(null);
         }
+        return ResponseEntity.notFound().build();
     }
 
     @ApiOperation(value = "clear list of actions")
     @DeleteMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Action> clearListOfActions() {
-        synchronized (Storage.class) {
-            Storage.clearStorage();
-            if (Storage.getAllActionsFromStorage().isEmpty()) {
-                return ResponseEntity.ok().body(null);
-            }
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
-        }
+        actionRepository.deleteAll();
+        return ResponseEntity.ok().body(null);
     }
 }
+
