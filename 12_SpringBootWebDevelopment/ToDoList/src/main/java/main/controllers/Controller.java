@@ -1,18 +1,21 @@
 package main.controllers;
 
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RestController;
+import main.model.ActionRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.RequestMapping;
 
-import java.util.Date;
-import java.util.Random;
+import java.util.ArrayList;
 
-@RestController
+@org.springframework.stereotype.Controller
 public class Controller {
 
-    @GetMapping("/")
-    public String getMainPage() {
-        return new Random().nextBoolean() ?
-                String.valueOf(new Random().nextInt(1000)) :
-                new Date().toString();
+    @Autowired
+    private ActionRepository actionRepository;
+
+    @RequestMapping("/")
+    public String getMainPage(Model model) {
+        model.addAttribute("allActions", new ArrayList<>(actionRepository.findAllByOrderById()));
+        return "index";
     }
 }

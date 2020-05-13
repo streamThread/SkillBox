@@ -51,7 +51,7 @@ public class ToDoListController {
                                             @PathVariable Integer id) {
         return actionRepository.findById(id)
                 .map(action -> new ResponseEntity<>(action, httpHeaders, HttpStatus.OK))
-                .orElseGet(() -> ResponseEntity.notFound().build());
+                .orElse(ResponseEntity.notFound().build());
     }
 
     @ApiOperation(value = "returns action by search text (if action contains that text)")

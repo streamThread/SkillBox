@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>ToDo List</title>
+</head>
+<body>
+<div>
+    <table align="center" border="1">
+        <caption><h2>Список дел</h2></caption>
+        <tr>
+            <th>Содержание</th>
+            <th>Время добавления<br> или изменения</th>
+        </tr>
+        <tr th:each="action : ${allActions}">
+            <td><a class="action_link" href="#" th:attr="data-id=${action.id}" th:text="${action.content}"></a></td>
+            <td th:attr="data-id=${action.id}" th:text="${action.addingTime}"></td>
+        </tr>
+    </table>
+</div>
+</body>
+</html>
+<style>
+</style>
