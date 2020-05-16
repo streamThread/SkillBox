@@ -24,6 +24,7 @@
         <module>11_Multithreading/ImageResizer</module>
         <module>11_Multithreading/Transactions</module>
         <module>11_Multithreading/SiteMapByForkJoin</module>
+        <module>12_SpringBootWebDevelopment/ToDoList</module>
     </modules>
 
 </project>
