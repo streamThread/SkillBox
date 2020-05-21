@@ -11,18 +11,21 @@ import java.util.concurrent.RecursiveTask;
 public class Parser extends RecursiveTask<Parser.ParseResults> {
 
     private static String mainUrl;
-    private static Set<String> allreadyParsed = Collections.synchronizedSet(new HashSet<>());
-    private ParseResults parseResults;
+    private static final Set<String> allreadyParsed = Collections.synchronizedSet(new HashSet<>());
+    private final ParseResults parseResults;
 
-    Parser(String url) {
+    private Parser(String url) {
+        parseResults = new ParseResults(url);
+    }
+
+    public static Parser getInstance(String url) {
         if (!url.endsWith("/")) {
             url += "/";
         }
-        parseResults = new ParseResults(url);
-        if (mainUrl == null) {
-            mainUrl = url;
-            allreadyParsed.add(url);
-        }
+        mainUrl = url;
+        allreadyParsed.clear();
+        allreadyParsed.add(url);
+        return new Parser(url);
     }
 
     @Override
@@ -41,7 +44,7 @@ public class Parser extends RecursiveTask<Parser.ParseResults> {
         for (Element e : document.select("a[href]")) {
             String absUrl = e.absUrl("href");
             if (absUrl.endsWith(".jpg") || absUrl.endsWith(".pdf") || absUrl.contains("#")
-            || absUrl.endsWith(".png")) {
+                    || absUrl.endsWith(".png")) {
                 continue;
             }
             if (!absUrl.endsWith("/")) {
@@ -80,14 +83,14 @@ public class Parser extends RecursiveTask<Parser.ParseResults> {
     class ParseResults {
 
         private final String URL;
-        private HashSet<String> urlsSet = new HashSet<>();
-        private Map<String, ParseResults> parseResultsMap = new HashMap<>();
+        private final HashSet<String> urlsSet = new HashSet<>();
+        private final Map<String, ParseResults> parseResultsMap = new HashMap<>();
 
         ParseResults(String url) {
             URL = url;
         }
 
-        public boolean isEmpty(){
+        public boolean isEmpty() {
             return parseResultsMap.isEmpty() && urlsSet.isEmpty();
         }
 
