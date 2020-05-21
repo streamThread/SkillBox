@@ -5,20 +5,36 @@
     <title>ToDo List</title>
 </head>
 <body>
-<div>
-    <table align="center" border="1">
-        <caption><h2>Список дел</h2></caption>
+<div align="center">
+    <table border="1px" cellpadding="10" cellspacing="0">
+        <caption style="padding-bottom: 20px">
+            <h2>Список дел</h2>
+            <form action="/act" method="post">
+                <textarea cols="40" name="content" placeholder="Input your action" rows="3"></textarea>
+                <p>
+                    <button type="submit">Save</button>
+                </p>
+            </form>
+        </caption>
         <tr>
             <th>Содержание</th>
             <th>Время добавления<br> или изменения</th>
         </tr>
         <tr th:each="action : ${allActions}">
-            <td><a class="action_link" href="#" th:attr="data-id=${action.id}" th:text="${action.content}"></a></td>
+            <td th:attr="data-id=${action.id}" th:text="${action.content}"></td>
             <td th:attr="data-id=${action.id}" th:text="${action.addingTime}"></td>
+            <td>
+                <form>
+                    <button formmethod="get" th:attr="formaction=|/edit/${action.id}|" type="submit">Edit</button>
+                </form>
+            </td>
+            <td>
+                <form>
+                    <button formmethod="get" th:attr="formaction=|/del/${action.id}|" type="submit">Delete</button>
+                </form>
+            </td>
         </tr>
     </table>
 </div>
 </body>
 </html>
-<style>
-</style>

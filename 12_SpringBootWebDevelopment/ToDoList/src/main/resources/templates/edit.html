@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>ToDo List</title>
+</head>
+<body>
+<div align="center">
+    <h2>Список дел</h2>
+    <form action="/act-edit" method="post">
+        <input name="id" th:attr="value=${id}" type="hidden">
+        <textarea cols="40" name="content" placeholder="Input your action" rows="3" th:text="${content}"></textarea>
+        <p>
+            <button type="submit">Save</button>
+        </p>
+    </form>
+</div>
+</body>
+</html>

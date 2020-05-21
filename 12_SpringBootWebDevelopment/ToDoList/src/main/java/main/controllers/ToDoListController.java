@@ -99,7 +99,6 @@ public class ToDoListController {
         return ResponseEntity.notFound().build();
     }
 
-
     @ApiOperation(value = "delete action by id")
     @DeleteMapping(value = "{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Action> deleteAction(@ApiParam(value = "id of the action to delete", required = true)
