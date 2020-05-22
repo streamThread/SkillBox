@@ -11,13 +11,14 @@ import java.util.concurrent.RecursiveTask;
 @Log4j2
 public class Main {
     static String enteredUrl;
+
     public static void main(String[] args) {
         while (true) {
             try {
                 System.out.print("https://");
                 Scanner scanner = new Scanner(System.in);
                 enteredUrl = scanner.nextLine();
-                if ("exit".equals(enteredUrl)){
+                if ("exit".equals(enteredUrl)) {
                     break;
                 }
                 if (enteredUrl.matches("[А-я]+")) {
@@ -26,9 +27,10 @@ public class Main {
                 }
                 ForkJoinPool fjp = new ForkJoinPool();
                 enteredUrl = "https://" + enteredUrl;
-                RecursiveTask<Parser.ParseResults> recursiveTask = new Parser(enteredUrl);
+
+                RecursiveTask<Parser.ParseResults> recursiveTask = Parser.getInstance(enteredUrl);
                 Parser.ParseResults parseResults = fjp.invoke(recursiveTask);
-                if (parseResults.isEmpty()){
+                if (parseResults.isEmpty()) {
                     continue;
                 }
                 try {
