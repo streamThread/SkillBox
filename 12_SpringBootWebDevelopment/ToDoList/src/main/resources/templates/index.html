@@ -5,15 +5,19 @@
     <title>ToDo List</title>
 </head>
 <body>
-<div align="center">
-    <table border="1px" cellpadding="10" cellspacing="0">
+<div>
+    <table border="1px" cellpadding="10" cellspacing="0" style="margin: auto">
         <caption style="padding-bottom: 20px">
             <h2>Список дел</h2>
-            <form action="/act" method="post">
+            <form method="post">
                 <textarea cols="40" name="content" placeholder="Input your action" rows="3"></textarea>
                 <p>
                     <button type="submit">Save</button>
                 </p>
+            </form>
+            <form action="filter" method="post">
+                <input name="filter" type="text">
+                <button type="submit">filter</button>
             </form>
         </caption>
         <tr>

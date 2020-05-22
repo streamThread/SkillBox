@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.Date;
+import java.util.List;
 
 @org.springframework.stereotype.Controller
 public class MainController {
@@ -20,18 +21,15 @@ public class MainController {
 
     @GetMapping("/")
     public String getMainPage(Model model) {
-        model.addAttribute("allActions",
-                toDoListController.getAllActions(null, null).getBody());
-        model.addAttribute("time", new Date().getTime());
-        return "index";
+        return buildIndex(model);
     }
 
-    @PostMapping("/act")
+    @PostMapping("/")
     public String putAction(@RequestParam String content, Model model) {
         HttpStatus httpStatus = toDoListController.putAction(
                 content, new Date().getTime()).getStatusCode();
         if (httpStatus.equals(HttpStatus.CREATED)) {
-            return "redirect:/";
+            return buildIndex(model);
         }
         model.addAttribute("httpStatus", httpStatus.toString());
         return "error";
@@ -69,5 +67,24 @@ public class MainController {
         }
         model.addAttribute("httpStatus", httpStatus.toString());
         return "error";
+    }
+
+    @PostMapping("/filter")
+    public String filterActions(@RequestParam String filter, Model model) {
+        ResponseEntity<List<Action>> responseEntity = toDoListController.getAction(
+                filter, null, null);
+        HttpStatus httpStatus = responseEntity.getStatusCode();
+        if (httpStatus.equals(HttpStatus.OK)) {
+            model.addAttribute("allActions", responseEntity.getBody());
+            return "index";
+        }
+        model.addAttribute("httpStatus", httpStatus.toString());
+        return "error";
+    }
+
+    private String buildIndex(Model model) {
+        model.addAttribute("allActions",
+                toDoListController.getAllActions(null, null).getBody());
+        return "index";
     }
 }
