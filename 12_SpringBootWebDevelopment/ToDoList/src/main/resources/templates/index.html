@@ -6,17 +6,22 @@
 </head>
 <body>
 <div>
+    <form method="post" style="position: absolute; right: 20px" th:action="@{/logout}">
+        <input type="submit" value="Sign Out"/>
+    </form>
     <table border="1px" cellpadding="10" cellspacing="0" style="margin: auto">
         <caption style="padding-bottom: 20px">
             <h2>Список дел</h2>
             <form method="post">
                 <textarea cols="40" name="content" placeholder="Input your action" rows="3"></textarea>
+                <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden"/>
                 <p>
                     <button type="submit">Save</button>
                 </p>
             </form>
             <form action="filter" method="post">
                 <input name="filter" type="text">
+                <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden"/>
                 <button type="submit">filter</button>
             </form>
         </caption>
@@ -29,12 +34,12 @@
             <td th:attr="data-id=${action.id}" th:text="${action.addingTime}"></td>
             <td>
                 <form>
-                    <button formmethod="get" th:attr="formaction=|/edit/${action.id}|" type="submit">Edit</button>
+                    <button formmethod="get" th:formaction="@{'/edit/'+${action.id}}" type="submit">Edit</button>
                 </form>
             </td>
             <td>
                 <form>
-                    <button formmethod="get" th:attr="formaction=|/del/${action.id}|" type="submit">Delete</button>
+                    <button formmethod="get" th:formaction="@{'/del/'+${action.id}}" type="submit">Delete</button>
                 </form>
             </td>
         </tr>

@@ -32,7 +32,7 @@ public class MainController {
             return buildIndex(model);
         }
         model.addAttribute("httpStatus", httpStatus.toString());
-        return "error";
+        return "errorlog";
     }
 
     @GetMapping("/del/{id}")
@@ -42,7 +42,7 @@ public class MainController {
             return "redirect:/";
         }
         model.addAttribute("httpStatus", httpStatus.toString());
-        return "error";
+        return "errorlog";
     }
 
     @GetMapping("/edit/{id}")
@@ -55,7 +55,7 @@ public class MainController {
             return "edit";
         }
         model.addAttribute("httpStatus", httpStatus);
-        return "error";
+        return "errorlog";
     }
 
     @PostMapping("/act-edit")
@@ -66,7 +66,7 @@ public class MainController {
             return "redirect:/";
         }
         model.addAttribute("httpStatus", httpStatus.toString());
-        return "error";
+        return "errorlog";
     }
 
     @PostMapping("/filter")
@@ -79,7 +79,7 @@ public class MainController {
             return "index";
         }
         model.addAttribute("httpStatus", httpStatus.toString());
-        return "error";
+        return "errorlog";
     }
 
     private String buildIndex(Model model) {

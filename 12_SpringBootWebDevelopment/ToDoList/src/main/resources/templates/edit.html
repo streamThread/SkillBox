@@ -10,6 +10,7 @@
     <form action="/act-edit" method="post">
         <input name="id" th:attr="value=${id}" type="hidden">
         <textarea cols="40" name="content" placeholder="Input your action" rows="3" th:text="${content}"></textarea>
+        <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden"/>
         <p>
             <button type="submit">Save</button>
         </p>
