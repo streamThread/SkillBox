@@ -1,0 +1,2 @@
+cd C:\Users\1\Desktop\Projects\SkillBox\java_basics\12_SpringBootWebDevelopment\ToDoList
+heroku container:login && heroku container:push web -a myapp234123 && heroku container:release web -a myapp234123
