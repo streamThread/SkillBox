@@ -1,3 +1,5 @@
+package DataBase;
+
 import com.mongodb.MongoClientSettings;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
@@ -9,6 +11,7 @@ import static org.bson.codecs.configuration.CodecRegistries.fromProviders;
 import static org.bson.codecs.configuration.CodecRegistries.fromRegistries;
 
 public class MongoConnect {
+
     static MongoDatabase initDB() {
         MongoClient mongoClient = MongoClients.create("mongodb://127.0.0.1:27017");
 
