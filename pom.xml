@@ -25,6 +25,7 @@
         <module>11_Multithreading/Transactions</module>
         <module>11_Multithreading/SiteMapByForkJoin</module>
         <module>12_SpringBootWebDevelopment/ToDoList</module>
+        <module>13_NoSQL/DatingSite</module>
         <module>13_NoSQL/MongoDB</module>
     </modules>
 
