@@ -9,10 +9,10 @@ import lombok.extern.log4j.Log4j2;
 import org.bson.Document;
 
 import java.util.HashSet;
-import java.util.List;
 
 import static com.mongodb.client.model.Accumulators.*;
 import static com.mongodb.client.model.Aggregates.*;
+import static com.mongodb.client.model.Projections.include;
 import static com.mongodb.client.model.Updates.addToSet;
 import static java.util.Arrays.asList;
 
@@ -78,40 +78,31 @@ public class DataBase {
 
     public void printStat() {
 
-        DATABASE.getCollection("shop").aggregate(
+        getStat().forEach(response ->
+                System.out.println(
+                        "Название магазина: " + response.get("_id") + "\r\n" +
+                                "Общее количество товаров в магазине: " + response.getLong("totalGoods") + "\r\n" +
+                                "Средняя стоимость товаров в магазине: " + Math.round(response.getDouble("avgPrice")) + "\r\n" +
+                                "Самый дешевый товар " + response.getString("cheap") + " стоит " + response.getInteger("cheapPrice") + "\r\n" +
+                                "Самый дорогой товар " + response.getString("expensive") + " стоит " + response.getInteger("expensivePrice") + "\r\n" +
+                                "Общее количество товара дешевле 100: " + response.getInteger("less100") + "\r\n"));
+    }
+
+    private Iterable<Document> getStat() {
+
+        return DATABASE.getCollection("shop").aggregate(
                 asList(
                         lookup("good", "goodsSet", "name", "goodsList"),
+                        project(include("name", "goodsList")),
                         unwind("$goodsList"),
-                        sort(Sorts.ascending("name")),
-                        facet(asList(
-                                new Facet(
-                                        "general_information",
-                                        List.of(group(
-                                                "$name",
-                                                sum("myCount", 1),
-                                                avg("avgPrice", "$goodsList.price"),
-                                                last("most_expensive_goods_price", "$goodsList.price"),
-                                                last("most_expensive_goods_name", "$goodsList.name"),
-                                                first("cheapest_goods_price", "$goodsList.price"),
-                                                first("cheapest_goods_name", "$goodsList.name")))),
-                                new Facet(
-                                        "optional",
-                                        asList(
-                                                match(Filters.lt("goodsList.price", 100)),
-                                                group("$name", sum("myCount", 1))))))))
-                .forEach(response -> response.getList("general_information", Document.class)
-                        .forEach(genInf -> {
-                            System.out.print(
-                                    "Название магазина: " + genInf.getString("_id") + "\r\n" +
-                                            "Общее количество товаров в магазине: " + genInf.getInteger("myCount") + "\r\n" +
-                                            "Средняя стоимость товаров в магазине: " + Math.round(genInf.getDouble("avgPrice")) + "\r\n" +
-                                            "Самый дорогой товар " + genInf.getString("most_expensive_goods_name") + " стоит " + genInf.getInteger("most_expensive_goods_price") + "\r\n" +
-                                            "Самый дешевый товар " + genInf.getString("cheapest_goods_name") + " стоит " + genInf.getInteger("cheapest_goods_price") + "\r\n");
-                            response.getList("optional", Document.class).stream()
-                                    .filter(optionInf -> optionInf.getString("_id") != null)
-                                    .filter(optionInf -> optionInf.getString("_id").equals(genInf.getString("_id")))
-                                    .forEach(optionInf -> System.out.println(
-                                            "Общее количество товара дешевле 100: " + optionInf.get("myCount") + "\r\n"));
-                        }));
+                        sort(Sorts.ascending("goodsList.price")),
+                        group("$name",
+                                sum("totalGoods", 1L),
+                                avg("avgPrice", "$goodsList.price"),
+                                first("cheap", "$goodsList.name"),
+                                first("cheapPrice", "$goodsList.price"),
+                                last("expensive", "$goodsList.name"),
+                                last("expensivePrice", "$goodsList.price"),
+                                sum("less100", Document.parse("{ \"$cond\": [ { \"$lt\": [ \"$goodsList.price\", 100 ] }, 1, 0 ] }")))));
     }
 }
