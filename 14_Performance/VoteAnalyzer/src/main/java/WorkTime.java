@@ -11,16 +11,17 @@ public class WorkTime {
         periods = new TreeSet<>();
     }
 
-    public void addVisitTime(long visitTime) {
+    public WorkTime addVisitTime(long visitTime) {
         Date visit = new Date(visitTime);
         TimePeriod newPeriod = new TimePeriod(visit, visit);
         for (TimePeriod period : periods) {
             if (period.compareTo(newPeriod) == 0) {
                 period.appendTime(visit);
-                return;
+                return this;
             }
         }
         periods.add(new TimePeriod(visit, visit));
+        return this;
     }
 
     public String toString() {
