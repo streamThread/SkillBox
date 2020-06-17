@@ -4,8 +4,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Log4j2
@@ -13,10 +11,10 @@ public class Writer implements Runnable {
 
     private static final AtomicInteger fileNum = new AtomicInteger(1);
     private final Path directory;
-    Future<StringBuilder> nums;
+    StringBuilder nums;
     int procNum;
 
-    public Writer(Future<StringBuilder> nums, Path directory, int procNum) {
+    public Writer(StringBuilder nums, Path directory, int procNum) {
         this.nums = nums;
         this.directory = directory;
         this.procNum = procNum;
@@ -30,9 +28,9 @@ public class Writer implements Runnable {
         Path filePath = directory.resolve(String.format("result%d.txt", fileNum.getAndIncrement()));
 
         try {
-            Files.write(filePath, nums.get().toString().getBytes(),
+            Files.write(filePath, nums.toString().getBytes(),
                     StandardOpenOption.APPEND, StandardOpenOption.CREATE);
-        } catch (IOException | InterruptedException | ExecutionException exception) {
+        } catch (IOException exception) {
             log.error(exception);
         }
     }

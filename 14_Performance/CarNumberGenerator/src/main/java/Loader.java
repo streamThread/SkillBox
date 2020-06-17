@@ -3,6 +3,7 @@ import lombok.extern.log4j.Log4j2;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collections;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -24,7 +25,10 @@ public class Loader {
         ExecutorService service = Executors.newFixedThreadPool(procNum);
 
         for (int regionCode = 1; regionCode < 100; regionCode++) {
-            service.submit(new Writer(service.submit(new Generator()), DEST_DIR, procNum));
+            service.submit(new Writer(
+                    service.invokeAny(Collections.singleton(new Generator())),
+                    DEST_DIR,
+                    procNum));
         }
 
         service.shutdown();
