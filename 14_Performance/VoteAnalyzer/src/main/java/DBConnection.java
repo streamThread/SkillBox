@@ -1,21 +1,21 @@
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 
-public class DBConnection
-{
+public class DBConnection {
     private static Connection connection;
 
-    private static String dbName = "learn";
-    private static String dbUser = "root";
-    private static String dbPass = "ya78yrc8n4w3984";
+    private static final String DB_NAME = "learn";
+    private static final String DB_USER = "root";
+    private static final String DB_PASS = "1234567u";
 
-    public static Connection getConnection()
-    {
-        if(connection == null)
-        {
+    public static Connection getConnection() {
+        if (connection == null) {
             try {
                 connection = DriverManager.getConnection(
-                    "jdbc:mysql://localhost:3306/" + dbName +
-                    "?user=" + dbUser + "&password=" + dbPass);
+                        "jdbc:mysql://localhost:3306/" + DB_NAME +
+                                "?user=" + DB_USER + "&password=" + DB_PASS);
                 connection.createStatement().execute("DROP TABLE IF EXISTS voter_count");
                 connection.createStatement().execute("CREATE TABLE voter_count(" +
                         "id INT NOT NULL AUTO_INCREMENT, " +
@@ -42,7 +42,7 @@ public class DBConnection
                             name + "', '" + birthDay + "', 1)");
         }
         else {
-            Integer id = rs.getInt("id");
+            int id = rs.getInt("id");
             DBConnection.getConnection().createStatement()
                     .execute("UPDATE voter_count SET `count`=`count`+1 WHERE id=" + id);
         }
