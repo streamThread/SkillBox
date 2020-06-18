@@ -1,15 +1,18 @@
 import java.util.concurrent.Callable;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class Generator implements Callable<StringBuilder> {
 
-    private static final AtomicInteger regionCode = new AtomicInteger(1);
+    private final int REGION_CODE;
     private final char[] LETTERS = {'У', 'К', 'Е', 'Н', 'Х', 'В', 'А', 'Р', 'О', 'С', 'М', 'Т'};
+
+    public Generator(int regionCode) {
+        REGION_CODE = regionCode;
+    }
 
     @Override
     public StringBuilder call() {
         StringBuilder stringBuilder = new StringBuilder(17262720);
-        String regionCodeWithLeadingZeros = padNumber(regionCode.getAndIncrement(), 2);
+        String regionCodeWithLeadingZeros = padNumber(REGION_CODE, 2);
         for (int number = 1; number < 1000; number++) {
             String mainNumberWithLeadingZeros = padNumber(number, 3);
             for (char firstLetter : LETTERS) {

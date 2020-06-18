@@ -1,9 +1,11 @@
-import auxiliary.MyFileVisitor;
 import lombok.extern.log4j.Log4j2;
 
+import java.io.File;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -15,8 +17,11 @@ public class Loader {
 
     public static void main(String[] args) throws Exception {
 
-        if (Files.exists(DEST_DIR)) {
-            Files.walkFileTree(DEST_DIR, new MyFileVisitor()); //recursive delete
+        if (Files.exists(DEST_DIR, LinkOption.NOFOLLOW_LINKS)) {
+            Files.walk(DEST_DIR)
+                    .sorted(Comparator.reverseOrder())
+                    .map(Path::toFile)
+                    .forEach(File::delete);
         }
         Files.createDirectory(DEST_DIR);
 
@@ -26,7 +31,7 @@ public class Loader {
 
         for (int regionCode = 1; regionCode < 100; regionCode++) {
             service.submit(new Writer(
-                    service.invokeAny(Collections.singleton(new Generator())),
+                    service.invokeAny(Collections.singleton(new Generator(regionCode))),
                     DEST_DIR,
                     procNum));
         }
