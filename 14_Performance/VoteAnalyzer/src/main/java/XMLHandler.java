@@ -3,15 +3,15 @@ import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
 import java.sql.SQLException;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 
 public class XMLHandler extends DefaultHandler {
 
-    private static final SimpleDateFormat VISIT_DATE_FORMAT = new SimpleDateFormat("yyyy.MM.dd HH:mm:ss");
-    private static final SimpleDateFormat SIMPLE_DATE_FORMAT = new SimpleDateFormat("yyyy.MM.dd");
+    private static final DateTimeFormatter VISIT_DATE_FORMAT = DateTimeFormatter.ofPattern("yyyy.MM.dd HH:mm:ss");
+    private static final DateTimeFormatter SIMPLE_DATE_FORMAT = DateTimeFormatter.ofPattern("yyyy.MM.dd");
     private static final HashMap<Integer, WorkTime> voteStationWorkTimes = new HashMap<>();
     private final DBConnection dbConnection = new DBConnection();
     private Voter voter;
@@ -22,18 +22,18 @@ public class XMLHandler extends DefaultHandler {
             if ("voter".equals(qName) && voter == null) {
 
                 voter = new Voter(attributes.getValue("name"),
-                        SIMPLE_DATE_FORMAT.parse(attributes.getValue("birthDay")));
+                        LocalDate.parse(attributes.getValue("birthDay"), SIMPLE_DATE_FORMAT));
 
             } else if ("visit".equals(qName) && voter != null) {
 
                 dbConnection.countVoter(voter.getName(), SIMPLE_DATE_FORMAT.format(voter.getBirthDay()));
 
                 int station = Integer.parseInt(attributes.getValue("station"));
-                Date time = VISIT_DATE_FORMAT.parse(attributes.getValue("time"));
+                LocalDateTime time = LocalDateTime.parse(attributes.getValue("time"), VISIT_DATE_FORMAT);
 
-                voteStationWorkTimes.merge(station, new WorkTime(), (v1, v2) -> v1.addVisitTime(time.getTime()));
+                voteStationWorkTimes.merge(station, new WorkTime(), (v1, v2) -> v1.addVisitTime(time));
             }
-        } catch (ParseException | SQLException ex) {
+        } catch (SQLException ex) {
             ex.printStackTrace();
         }
     }
