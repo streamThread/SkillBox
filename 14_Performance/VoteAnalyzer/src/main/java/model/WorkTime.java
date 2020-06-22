@@ -1,3 +1,5 @@
+package model;
+
 import java.time.LocalDateTime;
 import java.util.TreeSet;
 
@@ -5,7 +7,7 @@ public class WorkTime {
     private final TreeSet<TimePeriod> periods;
 
     /**
-     * Set of TimePeriod objects
+     * Set of model.TimePeriod objects
      */
     public WorkTime() {
         periods = new TreeSet<>();

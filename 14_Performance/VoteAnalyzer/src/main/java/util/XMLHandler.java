@@ -1,3 +1,7 @@
+package util;
+
+import model.Voter;
+import model.WorkTime;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
@@ -7,6 +11,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
+import java.util.Map;
 
 public class XMLHandler extends DefaultHandler {
 
@@ -64,9 +69,9 @@ public class XMLHandler extends DefaultHandler {
 
     public void printResults() {
         System.out.println("Voting station work times: ");
-        for (Integer votingStation : voteStationWorkTimes.keySet()) {
-            WorkTime workTime = voteStationWorkTimes.get(votingStation);
-            System.out.println("\t" + votingStation + " - " + workTime);
+        for (Map.Entry<Integer, WorkTime> entry : voteStationWorkTimes.entrySet()) {
+            WorkTime workTime = entry.getValue();
+            System.out.println("\t" + entry.getKey() + " - " + workTime);
         }
     }
 }

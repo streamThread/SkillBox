@@ -1,3 +1,5 @@
+package model;
+
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.util.Objects;
@@ -21,8 +23,8 @@ public class Voter {
             return false;
         }
         Voter voter = (Voter) obj;
-        return (name == voter.name || (name != null && name.equals(voter.getName())))
-                && (birthDay == voter.birthDay || (birthDay != null && birthDay.equals(voter.getBirthDay())));
+        return Objects.equals(name, voter.name)
+                && Objects.equals(birthDay, voter.birthDay);
     }
 
     @Override

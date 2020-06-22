@@ -1,11 +1,10 @@
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+package util;
+
+import java.sql.*;
 
 public class DBConnection {
 
-    private static StringBuilder insertQuery = new StringBuilder();
+    private StringBuilder insertQuery = new StringBuilder();
 
     private static final String DB_NAME = "learn";
     private static final String DB_USER = "root";
@@ -21,16 +20,26 @@ public class DBConnection {
             connection = DriverManager.getConnection(
                     "jdbc:mysql://localhost:3306/" + DB_NAME + "?useSSL=false" +
                             "&user=" + DB_USER + "&password=" + DB_PASS + "&serverTimezone=UTC");
-            connection.createStatement().execute("DROP TABLE IF EXISTS voter_count");
-            connection.createStatement().execute("CREATE TABLE voter_count(" +
-                    "id INT NOT NULL AUTO_INCREMENT, " +
-                    "name TINYTEXT NOT NULL, " +
-                    "birthDate DATE NOT NULL, " +
-                    "`count` INT NOT NULL, " +
-                    "PRIMARY KEY(id), " +
-                    "UNIQUE KEY name_date(name(50), birthDate))");
+            try (Statement statement = connection.createStatement()) {
+                statement.execute("DROP TABLE IF EXISTS voter_count");
+                statement.execute("CREATE TABLE voter_count(" +
+                        "id INT NOT NULL AUTO_INCREMENT, " +
+                        "name TINYTEXT NOT NULL, " +
+                        "birthDate DATE NOT NULL, " +
+                        "`count` INT NOT NULL, " +
+                        "PRIMARY KEY(id), " +
+                        "UNIQUE KEY name_date(name(50), birthDate))");
+            }
         } catch (SQLException e) {
             e.printStackTrace();
+        }
+    }
+
+    public void closeConnection() {
+        try {
+            connection.close();
+        } catch (SQLException throwables) {
+            throwables.printStackTrace();
         }
     }
 
@@ -38,7 +47,9 @@ public class DBConnection {
         String sql = "INSERT INTO voter_count(name, birthDate, `count`) " +
                 "VALUES" + insertQuery.toString() + " " +
                 "ON DUPLICATE KEY UPDATE `count` = `count` + 1";
-        connection.createStatement().execute(sql);
+        try (Statement statement = connection.createStatement()) {
+            statement.execute(sql);
+        }
         insertQuery = new StringBuilder();
     }
 
@@ -53,14 +64,15 @@ public class DBConnection {
 
     public String getStringOfVoterCounts() throws SQLException {
         String sql = "SELECT name, birthDate, `count` FROM voter_count WHERE `count` > 1";
-        ResultSet rs = connection.createStatement().executeQuery(sql);
-        StringBuilder stringBuilder = new StringBuilder();
-        while (rs.next()) {
-            stringBuilder
-                    .append('\t').append(rs.getString("name"))
-                    .append(" (").append(rs.getString("birthDate"))
-                    .append(") - ").append(rs.getInt("count")).append("\r\n");
+        try (ResultSet rs = connection.createStatement().executeQuery(sql)) {
+            StringBuilder stringBuilder = new StringBuilder();
+            while (rs.next()) {
+                stringBuilder
+                        .append('\t').append(rs.getString("name"))
+                        .append(" (").append(rs.getString("birthDate"))
+                        .append(") - ").append(rs.getInt("count")).append("\r\n");
+            }
+            return stringBuilder.toString();
         }
-        return stringBuilder.toString();
     }
 }

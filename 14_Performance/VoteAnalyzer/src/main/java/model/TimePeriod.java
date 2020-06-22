@@ -1,5 +1,8 @@
+package model;
+
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Objects;
 
 public class TimePeriod implements Comparable<TimePeriod> {
 
@@ -15,7 +18,7 @@ public class TimePeriod implements Comparable<TimePeriod> {
 
     public void appendTime(LocalDateTime visitTime) {
         if (!from.toLocalDate().equals(visitTime.toLocalDate()))
-            throw new IllegalArgumentException("Visit time must be within the same day as the current TimePeriod!");
+            throw new IllegalArgumentException("Visit time must be within the same day as the current model.TimePeriod!");
         if (visitTime.isBefore(from)) {
             from = visitTime;
         }
@@ -35,5 +38,19 @@ public class TimePeriod implements Comparable<TimePeriod> {
     @Override
     public int compareTo(TimePeriod period) {
         return from.toLocalDate().compareTo(period.from.toLocalDate());
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        TimePeriod that = (TimePeriod) o;
+        return (Objects.equals(from, that.from))
+                && (Objects.equals(to, that.to));
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(from, to);
     }
 }
