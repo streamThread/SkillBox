@@ -2,8 +2,11 @@ package util;
 
 import model.Voter;
 import model.WorkTime;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.Marker;
+import org.apache.logging.log4j.MarkerManager;
 import org.xml.sax.Attributes;
-import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
 import java.sql.SQLException;
@@ -13,65 +16,71 @@ import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 
+
 public class XMLHandler extends DefaultHandler {
 
     private static final DateTimeFormatter VISIT_DATE_FORMAT = DateTimeFormatter.ofPattern("yyyy.MM.dd HH:mm:ss");
     private static final DateTimeFormatter SIMPLE_DATE_FORMAT = DateTimeFormatter.ofPattern("yyyy.MM.dd");
-    private static final HashMap<Integer, WorkTime> voteStationWorkTimes = new HashMap<>();
-    private final DBConnection dbConnection = new DBConnection();
+    private static final Marker INFO = MarkerManager.getMarker("INFO");
+    private static final Logger logger = LogManager.getRootLogger();
+    private final HashMap<Integer, WorkTime> voteStationWorkTimes = new HashMap<>();
+    private DBConnection dbConnection;
     private Voter voter;
 
     @Override
-    public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
-        try {
-            if ("voter".equals(qName) && voter == null) {
+    public void startDocument() {
+        dbConnection = new DBConnection();
+        dbConnection.createTable();
+    }
 
-                voter = new Voter(attributes.getValue("name"),
-                        LocalDate.parse(attributes.getValue("birthDay"), SIMPLE_DATE_FORMAT));
+    @Override
+    public void startElement(String uri, String localName, String qName, Attributes attributes) {
+        if ("voter".equals(qName) && voter == null) {
 
-            } else if ("visit".equals(qName) && voter != null) {
+            voter = new Voter(attributes.getValue("name"),
+                    LocalDate.parse(attributes.getValue("birthDay"), SIMPLE_DATE_FORMAT));
 
-                dbConnection.countVoter(voter.getName(), SIMPLE_DATE_FORMAT.format(voter.getBirthDay()));
+        } else if ("visit".equals(qName) && voter != null) {
 
-                int station = Integer.parseInt(attributes.getValue("station"));
-                LocalDateTime time = LocalDateTime.parse(attributes.getValue("time"), VISIT_DATE_FORMAT);
+            dbConnection.countVoter(voter.getName(), SIMPLE_DATE_FORMAT.format(voter.getBirthDay()));
 
-                voteStationWorkTimes.merge(station, new WorkTime(), (v1, v2) -> v1.addVisitTime(time));
-            }
-        } catch (SQLException ex) {
-            ex.printStackTrace();
+            int station = Integer.parseInt(attributes.getValue("station"));
+            LocalDateTime time = LocalDateTime.parse(attributes.getValue("time"), VISIT_DATE_FORMAT);
+
+            voteStationWorkTimes.merge(station, new WorkTime(), (v1, v2) -> v1.addVisitTime(time));
         }
     }
 
     @Override
-    public void endDocument() throws SAXException {
-        try {
-            dbConnection.executeMultiInsert();
-        } catch (SQLException ex) {
-            ex.printStackTrace();
-        }
+    public void endDocument() {
+        dbConnection.executeMultiInsert();
+        dbConnection.setLinesCount(0);
+        logger.info(INFO, "Конец документа");
+        dbConnection.close();
     }
 
     @Override
-    public void endElement(String uri, String localName, String qName) throws SAXException {
+    public void endElement(String uri, String localName, String qName) {
         if ("voter".equals(qName)) {
             voter = null;
         }
     }
 
     public void printDublicatedVoters() {
-        try {
-            System.out.println(dbConnection.getStringOfVoterCounts());
+        try (DBConnection connection = new DBConnection()) {
+            logger.info(INFO, connection.getStringOfVoterCounts());
         } catch (SQLException ex) {
-            ex.printStackTrace();
+            logger.error(ex);
         }
     }
 
     public void printResults() {
-        System.out.println("Voting station work times: ");
+        logger.info(INFO, "Voting station work times: ");
         for (Map.Entry<Integer, WorkTime> entry : voteStationWorkTimes.entrySet()) {
             WorkTime workTime = entry.getValue();
-            System.out.println("\t" + entry.getKey() + " - " + workTime);
+            if (logger.isInfoEnabled()) {
+                logger.info(INFO, String.format("\t%d - %s", entry.getKey(), workTime));
+            }
         }
     }
 }
