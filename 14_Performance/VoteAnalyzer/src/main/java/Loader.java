@@ -2,7 +2,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
-import util.XMLHandler;
+import xml_to_csv.XMLHandlerToCSV;
 
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
@@ -14,12 +14,12 @@ public class Loader {
 
     public static void main(String[] args) throws Exception {
 
-        String fileName = "data-1572M.xml";
+        String fileName = "data-18M.xml";
 
         long start = System.currentTimeMillis();
         SAXParserFactory factory = SAXParserFactory.newDefaultInstance();
         SAXParser parser = factory.newSAXParser();
-        XMLHandler handler = new XMLHandler();
+        XMLHandlerToCSV handler = new XMLHandlerToCSV("csv/csv_to_db.csv");
         parser.parse(Loader.class.getClassLoader().getResourceAsStream(fileName), handler);
         handler.printResults();
         handler.printDublicatedVoters();

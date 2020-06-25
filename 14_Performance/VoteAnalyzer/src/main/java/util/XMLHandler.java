@@ -19,14 +19,14 @@ import java.util.Map;
 
 public class XMLHandler extends DefaultHandler {
 
-    private static final DateTimeFormatter VISIT_DATE_FORMAT = DateTimeFormatter.ofPattern("yyyy.MM.dd HH:mm:ss");
-    private static final DateTimeFormatter SIMPLE_DATE_FORMAT = DateTimeFormatter.ofPattern("yyyy.MM.dd");
+    protected static final DateTimeFormatter VISIT_DATE_FORMAT = DateTimeFormatter.ofPattern("yyyy.MM.dd HH:mm:ss");
+    protected static final DateTimeFormatter SIMPLE_DATE_FORMAT = DateTimeFormatter.ofPattern("yyyy.MM.dd");
     private static final DateTimeFormatter SIMPLE_DATE_FORMAT_TO_DB = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-    private static final Marker INFO = MarkerManager.getMarker("INFO");
-    private static final Logger logger = LogManager.getRootLogger();
-    private final HashMap<Integer, WorkTime> voteStationWorkTimes = new HashMap<>();
-    private DBConnection dbConnection;
-    private Voter voter;
+    protected static final Marker INFO = MarkerManager.getMarker("INFO");
+    protected static final Logger logger = LogManager.getRootLogger();
+    protected final HashMap<Integer, WorkTime> voteStationWorkTimes = new HashMap<>();
+    protected DBConnection dbConnection;
+    protected Voter voter;
 
     @Override
     public void startDocument() {

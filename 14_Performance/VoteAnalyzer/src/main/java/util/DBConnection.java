@@ -9,15 +9,16 @@ import java.sql.*;
 
 public class DBConnection implements AutoCloseable {
 
-    private StringBuilder insertQuery = new StringBuilder();
-    private static final Logger logger = LogManager.getLogger();
+    private static final Logger logger = LogManager.getRootLogger();
+    private static final String INSERT_QUERY = "INSERT INTO voter_count(name, birthDate) VALUES";
     private static final Marker INFO = MarkerManager.getMarker("INFO");
     private static final String DB_NAME = "learn";
     private static final String DB_USER = "root";
     private static final String DB_PASS = "1234567u";
     private static final int MAX_ALLOWED_PACKET = 134217728;
-
-    private int querySizeInBytes = 94;
+    private static final int INSERT_QUERY_SIZE_IN_BYTES = INSERT_QUERY.length() * 2;
+    private StringBuilder valuesOfQuery = new StringBuilder();
+    private int querySizeInBytes = INSERT_QUERY_SIZE_IN_BYTES;
     private int linesCount;
     private Connection connection;
 
@@ -25,7 +26,8 @@ public class DBConnection implements AutoCloseable {
         try {
             connection = DriverManager.getConnection(
                     "jdbc:mysql://localhost:3306/" + DB_NAME + "?useSSL=false" +
-                            "&user=" + DB_USER + "&password=" + DB_PASS + "&serverTimezone=UTC");
+                            "&user=" + DB_USER + "&password=" + DB_PASS + "&serverTimezone=UTC" +
+                            "&allowLoadLocalInfile=true");
             linesCount = 0;
         } catch (SQLException e) {
             logger.error(e);
@@ -59,9 +61,24 @@ public class DBConnection implements AutoCloseable {
         this.linesCount = linesCount;
     }
 
+    public void loadDataLocalInFile(String path) {
+        String sql = "LOAD DATA LOCAL INFILE " +
+                "'" + path + "' " +
+                "into table voter_count " +
+                "COLUMNS TERMINATED BY ',' " +
+                "ENCLOSED BY '\"' " +
+                "IGNORE 1 ROWS " +
+                "(@birthDate, name) " +
+                "SET birthDate = STR_TO_DATE(@birthDate, '%Y-%m-%d');";
+        try (Statement statement = connection.createStatement()) {
+            statement.execute(sql);
+        } catch (SQLException exception) {
+            logger.error(exception);
+        }
+    }
+
     public void executeMultiInsert() {
-        String sql = "INSERT INTO voter_count(name, birthDate) " +
-                "VALUES" + insertQuery.toString();
+        String sql = INSERT_QUERY + valuesOfQuery.toString();
         try (Statement statement = connection.createStatement()) {
             linesCount = linesCount + statement.executeUpdate(sql);
             if (logger.isInfoEnabled() && linesCount != 0) {
@@ -70,8 +87,8 @@ public class DBConnection implements AutoCloseable {
         } catch (SQLException exception) {
             logger.error(exception);
         }
-        insertQuery = new StringBuilder();
-        querySizeInBytes = 94;
+        valuesOfQuery = new StringBuilder();
+        querySizeInBytes = INSERT_QUERY_SIZE_IN_BYTES;
     }
 
     public void countVoter(String name, String birthDay) {
@@ -81,7 +98,7 @@ public class DBConnection implements AutoCloseable {
         if (querySizeInBytes + newQueryPartSizeInBytes > MAX_ALLOWED_PACKET) {
             executeMultiInsert();
         }
-        insertQuery.append(querySizeInBytes == 94 ? "" : ", ").append(newQueryPart);
+        valuesOfQuery.append(querySizeInBytes == INSERT_QUERY_SIZE_IN_BYTES ? "" : ", ").append(newQueryPart);
         querySizeInBytes = querySizeInBytes + newQueryPartSizeInBytes;
     }
 
