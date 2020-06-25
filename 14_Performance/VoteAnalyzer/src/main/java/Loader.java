@@ -14,7 +14,7 @@ public class Loader {
 
     public static void main(String[] args) throws Exception {
 
-        String fileName = "data-18M.xml";
+        String fileName = "data-1572M.xml";
 
         long start = System.currentTimeMillis();
         SAXParserFactory factory = SAXParserFactory.newDefaultInstance();

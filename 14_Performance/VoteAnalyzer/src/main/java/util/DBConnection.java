@@ -15,7 +15,9 @@ public class DBConnection implements AutoCloseable {
     private static final String DB_NAME = "learn";
     private static final String DB_USER = "root";
     private static final String DB_PASS = "1234567u";
+    private static final int MAX_ALLOWED_PACKET = 134217728;
 
+    private int querySizeInBytes = 94;
     private int linesCount;
     private Connection connection;
 
@@ -37,10 +39,8 @@ public class DBConnection implements AutoCloseable {
                     "id INT NOT NULL AUTO_INCREMENT, " +
                     "name TINYTEXT NOT NULL, " +
                     "birthDate DATE NOT NULL, " +
-                    "`count` TINYINT UNSIGNED NOT NULL, " +
                     "PRIMARY KEY(id), " +
-                    "UNIQUE KEY name_date(name(50), birthDate), " +
-                    "KEY count_key USING BTREE(`count`))");
+                    "KEY name_date(name(50), birthDate))");
         } catch (SQLException exception) {
             logger.error(exception);
         }
@@ -60,9 +60,8 @@ public class DBConnection implements AutoCloseable {
     }
 
     public void executeMultiInsert() {
-        String sql = "INSERT INTO voter_count(name, birthDate, `count`) " +
-                "VALUES" + insertQuery.toString() + " " +
-                "ON DUPLICATE KEY UPDATE `count` = `count` + 1";
+        String sql = "INSERT INTO voter_count(name, birthDate) " +
+                "VALUES" + insertQuery.toString();
         try (Statement statement = connection.createStatement()) {
             linesCount = linesCount + statement.executeUpdate(sql);
             if (logger.isInfoEnabled() && linesCount != 0) {
@@ -72,19 +71,23 @@ public class DBConnection implements AutoCloseable {
             logger.error(exception);
         }
         insertQuery = new StringBuilder();
+        querySizeInBytes = 94;
     }
 
     public void countVoter(String name, String birthDay) {
-        birthDay = birthDay.replace('.', '-');
-        String newQueryPart = "('" + name + "', '" + birthDay + "', 1)";
-        if (insertQuery.length() * 2 + newQueryPart.length() * 2 + 104 * 2 > 4194304) {
+        StringBuilder newQueryPart = new StringBuilder();
+        newQueryPart.append("('").append(name).append("', '").append(birthDay).append("')");
+        int newQueryPartSizeInBytes = newQueryPart.length() * 2;
+        if (querySizeInBytes + newQueryPartSizeInBytes > MAX_ALLOWED_PACKET) {
             executeMultiInsert();
         }
-        insertQuery.append(insertQuery.length() == 0 ? "" : ", ").append(newQueryPart);
+        insertQuery.append(querySizeInBytes == 94 ? "" : ", ").append(newQueryPart);
+        querySizeInBytes = querySizeInBytes + newQueryPartSizeInBytes;
     }
 
     public String getStringOfVoterCounts() throws SQLException {
-        String sql = "SELECT name, birthDate, `count` FROM voter_count WHERE `count` > 1";
+        String sql = "SELECT name, birthDate, COUNT(*) as `count` FROM voter_count" +
+                " GROUP BY name, birthDate HAVING `count` > 1";
         try (ResultSet rs = connection.createStatement().executeQuery(sql)) {
             StringBuilder stringBuilder = new StringBuilder();
             stringBuilder.append("\r\n");

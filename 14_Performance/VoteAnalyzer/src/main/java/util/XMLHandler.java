@@ -21,6 +21,7 @@ public class XMLHandler extends DefaultHandler {
 
     private static final DateTimeFormatter VISIT_DATE_FORMAT = DateTimeFormatter.ofPattern("yyyy.MM.dd HH:mm:ss");
     private static final DateTimeFormatter SIMPLE_DATE_FORMAT = DateTimeFormatter.ofPattern("yyyy.MM.dd");
+    private static final DateTimeFormatter SIMPLE_DATE_FORMAT_TO_DB = DateTimeFormatter.ofPattern("yyyy-MM-dd");
     private static final Marker INFO = MarkerManager.getMarker("INFO");
     private static final Logger logger = LogManager.getRootLogger();
     private final HashMap<Integer, WorkTime> voteStationWorkTimes = new HashMap<>();
@@ -42,7 +43,7 @@ public class XMLHandler extends DefaultHandler {
 
         } else if ("visit".equals(qName) && voter != null) {
 
-            dbConnection.countVoter(voter.getName(), SIMPLE_DATE_FORMAT.format(voter.getBirthDay()));
+            dbConnection.countVoter(voter.getName(), SIMPLE_DATE_FORMAT_TO_DB.format(voter.getBirthDay()));
 
             int station = Integer.parseInt(attributes.getValue("station"));
             LocalDateTime time = LocalDateTime.parse(attributes.getValue("time"), VISIT_DATE_FORMAT);
