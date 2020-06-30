@@ -28,6 +28,7 @@
         <module>13_NoSQL/shops_n_goods</module>
         <module>13_NoSQL/DatingSite</module>
         <module>13_NoSQL/MongoDB</module>
+        <module>14_Performance/VoteAnalyzer</module>
         <module>14_Performance/CarNumberGenerator</module>
     </modules>
 
