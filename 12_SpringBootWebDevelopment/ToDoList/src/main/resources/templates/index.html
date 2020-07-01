@@ -31,7 +31,7 @@
         </tr>
         <tr th:each="action : ${allActions}">
             <td th:attr="data-id=${action.id}" th:text="${action.content}"></td>
-            <td th:attr="data-id=${action.id}" th:text="${action.addingTime}"></td>
+            <td th:attr="data-id=${action.id}" th:text="${action.timeStamp}"></td>
             <td>
                 <form>
                     <button formmethod="get" th:formaction="@{${action.id}+'/edit/'}" type="submit">Edit</button>

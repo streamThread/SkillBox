@@ -4,6 +4,8 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import main.entity.Action;
+import main.entity.dto.PutActionDTO;
+import main.entity.dto.ReplaceActionDTO;
 import main.service.ActionService;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
@@ -34,11 +36,14 @@ public class ToDoListController {
                                                       @RequestParam(required = false) Integer pageNumber,
                                                       @ApiParam(value = "Action's count on page")
                                                       @RequestParam(required = false) Integer pageSize) {
+        ResponseEntity<List<Action>> responseEntity;
         if (pageNumber == null || pageSize == null) {
-            return ResponseEntity.ok(actionService.getAllActions());
+            responseEntity = ResponseEntity.ok(actionService.getAllActions());
+        } else {
+            responseEntity = ResponseEntity.ok()
+                    .body(actionService.getActionsByPage(pageNumber, pageSize));
         }
-        return ResponseEntity.ok()
-                .body(actionService.getActionsByPage(pageNumber, pageSize));
+        return responseEntity;
     }
 
     @ApiOperation(value = "returns action by requested id")
@@ -64,7 +69,8 @@ public class ToDoListController {
         if (pageNumber == null || pageSize == null) {
             actions = actionService.getAllActionsByContent(query);
         } else {
-            actions = actionService.getAllActionsByContentByPage(query, pageNumber, pageSize);
+            actions = actionService.getAllActionsByContentByPage(query,
+                    pageNumber, pageSize);
         }
         return actions.isEmpty() ?
                 ResponseEntity.notFound().build() :
@@ -73,23 +79,23 @@ public class ToDoListController {
 
     @ApiOperation(value = "add action to the list")
     @PostMapping(produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Long> putAction(@ApiParam(value = "content of the new action to add", required = true)
-                                          @RequestParam String content,
-                                          @ApiParam(value = "adding time of the new action", required = true)
-                                          @RequestParam Long timeStamp) {
-        Long id = actionService.addActionToDB(new Action(content, timeStamp));
+    public ResponseEntity<Long> putAction(@ApiParam(value = "Content and time of adding an action", required = true)
+                                          @RequestBody PutActionDTO putActionDTO) {
+        Action action = new Action();
+        action.setContent(putActionDTO.getContent());
+        action.setTimeStamp(putActionDTO.getTimeStamp());
+        Long id = actionService.addActionToDB(action);
         return ResponseEntity.created(URI.create(String.format("/actions/%d", id))).body(id);
     }
 
     @ApiOperation(value = "add action by id to the list (removes old action`s value by this id)")
     @PutMapping(value = "{id}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Long> replaceAction(@ApiParam(value = "id of the new action to add", required = true)
-                                              @PathVariable Long id,
-                                              @ApiParam(value = "content of the new action", required = true)
-                                              @RequestParam String content,
-                                              @ApiParam(value = "adding time of the new action", required = true)
-                                              @RequestParam Long timeStamp) {
-        Action action = new Action(id, content, timeStamp);
+    public ResponseEntity<Long> replaceAction(@ApiParam(value = "id, content and adding time of the new action to add", required = true)
+                                              @RequestBody ReplaceActionDTO replaceActionDTO) {
+        Action action = new Action();
+        action.setId(replaceActionDTO.getId());
+        action.setContent(replaceActionDTO.getContent());
+        action.setTimeStamp(replaceActionDTO.getTimeStamp());
         Long savedId = actionService.replaceActionToDBIfExists(action);
         return savedId != 0 ?
                 ResponseEntity.created(URI.create(String.format("/actions/%d", savedId))).body(savedId) :

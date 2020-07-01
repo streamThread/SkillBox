@@ -7,18 +7,20 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Date;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 @Controller
 @RequestMapping("/")
 public class MainController {
 
+    private final ActionService actionService;
+
     private static final String ERROR_PAGE = "errorlog";
     private static final String MAIN_PAGE = "index";
     private static final String EDIT_PAGE = "edit";
     private static final String REDIRECT_TO_MAIN_PAGE = "redirect:/";
-    private final ActionService actionService;
 
     public MainController(ActionService actionService) {
         this.actionService = actionService;
@@ -31,7 +33,10 @@ public class MainController {
 
     @PostMapping
     public String putAction(@RequestParam String content, Model model) {
-        if (actionService.addActionToDB(new Action(content, new Date().getTime())) != 0) {
+        Action action = new Action();
+        action.setContent(content);
+        action.setTimeStamp(LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS));
+        if (actionService.addActionToDB(action) != 0) {
             return buildIndex(model);
         }
         model.addAttribute("httpStatus", HttpStatus.SERVICE_UNAVAILABLE);
@@ -62,7 +67,11 @@ public class MainController {
 
     @PostMapping(EDIT_PAGE)
     public String putEditedAction(@RequestParam Long id, @RequestParam String content, Model model) {
-        if (actionService.replaceActionToDBIfExists(new Action(id, content, new Date().getTime())) != 0) {
+        Action action = new Action();
+        action.setId(id);
+        action.setContent(content);
+        action.setTimeStamp(LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS));
+        if (actionService.replaceActionToDBIfExists(action) != 0) {
             return REDIRECT_TO_MAIN_PAGE;
         }
         model.addAttribute("httpStatus", HttpStatus.NOT_FOUND);
