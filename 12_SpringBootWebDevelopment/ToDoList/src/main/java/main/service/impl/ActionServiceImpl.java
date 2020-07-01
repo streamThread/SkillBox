@@ -3,7 +3,6 @@ package main.service.impl;
 import main.entity.Action;
 import main.repos.ActionRepository;
 import main.service.ActionService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
@@ -17,7 +16,6 @@ public class ActionServiceImpl implements ActionService {
     private final ActionRepository actionRepository;
     private final Sort sortById = Sort.by("id");
 
-    @Autowired
     public ActionServiceImpl(ActionRepository actionRepository) {
         this.actionRepository = actionRepository;
     }
