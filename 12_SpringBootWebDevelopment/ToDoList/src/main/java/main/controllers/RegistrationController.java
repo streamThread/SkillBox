@@ -1,9 +1,8 @@
 package main.controllers;
 
-import main.model.Role;
-import main.model.User;
+import main.entity.Role;
+import main.entity.User;
 import main.repos.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -14,8 +13,11 @@ import java.util.Collections;
 @Controller
 public class RegistrationController {
 
-    @Autowired
     UserRepository userRepository;
+
+    public RegistrationController(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
 
     @GetMapping("/registration")
     public String registration() {

@@ -12,3 +12,4 @@
 /12_SpringBootWebDevelopment/ToDoList/Dockerfile
 /12_SpringBootWebDevelopment/ToDoList/HerokuDeploy.bat
 /12_SpringBootWebDevelopment/ToDoList/src/main/resources/application-heroku.properties
+/14_Performance/VoteAnalyzer/src/main/resources/

@@ -1,90 +1,88 @@
 package main.controllers;
 
-import main.model.Action;
-import org.springframework.beans.factory.annotation.Autowired;
+import main.entity.Action;
+import main.service.ActionService;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.Date;
 import java.util.List;
 
-@org.springframework.stereotype.Controller
+@Controller
+@RequestMapping("/")
 public class MainController {
 
-    @Autowired
-    private ToDoListController toDoListController;
+    private static final String ERROR_PAGE = "errorlog";
+    private static final String MAIN_PAGE = "index";
+    private static final String EDIT_PAGE = "edit";
+    private static final String REDIRECT_TO_MAIN_PAGE = "redirect:/";
+    private final ActionService actionService;
 
-    @GetMapping("/")
+    public MainController(ActionService actionService) {
+        this.actionService = actionService;
+    }
+
+    @GetMapping
     public String getMainPage(Model model) {
         return buildIndex(model);
     }
 
-    @PostMapping("/")
+    @PostMapping
     public String putAction(@RequestParam String content, Model model) {
-        HttpStatus httpStatus = toDoListController.putAction(
-                content, new Date().getTime()).getStatusCode();
-        if (httpStatus.equals(HttpStatus.CREATED)) {
+        if (actionService.addActionToDB(new Action(content, new Date().getTime())) != 0) {
             return buildIndex(model);
         }
-        model.addAttribute("httpStatus", httpStatus.toString());
-        return "errorlog";
+        model.addAttribute("httpStatus", HttpStatus.SERVICE_UNAVAILABLE);
+        return ERROR_PAGE;
     }
 
-    @GetMapping("/del/{id}")
-    public String deleteAction(@PathVariable Integer id, Model model) {
-        HttpStatus httpStatus = toDoListController.deleteAction(id).getStatusCode();
-        if (httpStatus.equals(HttpStatus.OK)) {
-            return "redirect:/";
+    @PostMapping("{id}/del/")
+    public String deleteAction(@PathVariable Long id, Model model) {
+        if (actionService.deleteActionIfExists(id)) {
+            return REDIRECT_TO_MAIN_PAGE;
         }
-        model.addAttribute("httpStatus", httpStatus.toString());
-        return "errorlog";
+        model.addAttribute("httpStatus", HttpStatus.NOT_FOUND);
+        return ERROR_PAGE;
     }
 
-    @GetMapping("/edit/{id}")
-    public String editAction(@PathVariable Integer id, Model model) {
-        ResponseEntity<Action> actionResponseEntity = toDoListController.getAction(id);
-        HttpStatus httpStatus = actionResponseEntity.getStatusCode();
-        if (httpStatus.equals(HttpStatus.OK)) {
-            model.addAttribute("content", actionResponseEntity.getBody().getContent());
-            model.addAttribute("id", id);
-            return "edit";
+    @GetMapping("{id}/edit")
+    public String editAction(@PathVariable Long id, Model model) {
+        return actionService.getAction(id)
+                .map(a -> {
+                    model.addAttribute("content", a.getContent());
+                    model.addAttribute("id", id);
+                    return EDIT_PAGE;
+                }).orElseGet(() -> {
+                    model.addAttribute("httpStatus", HttpStatus.NOT_FOUND);
+                    return ERROR_PAGE;
+                });
+    }
+
+    @PostMapping(EDIT_PAGE)
+    public String putEditedAction(@RequestParam Long id, @RequestParam String content, Model model) {
+        if (actionService.replaceActionToDBIfExists(new Action(id, content, new Date().getTime())) != 0) {
+            return REDIRECT_TO_MAIN_PAGE;
         }
-        model.addAttribute("httpStatus", httpStatus);
-        return "errorlog";
+        model.addAttribute("httpStatus", HttpStatus.NOT_FOUND);
+        return ERROR_PAGE;
     }
 
-    @PostMapping("/act-edit")
-    public String putEditedAction(@RequestParam Integer id, @RequestParam String content, Model model) {
-        HttpStatus httpStatus = toDoListController.replaceAction(id,
-                content, new Date().getTime()).getStatusCode();
-        if (httpStatus.equals(HttpStatus.CREATED)) {
-            return "redirect:/";
-        }
-        model.addAttribute("httpStatus", httpStatus.toString());
-        return "errorlog";
-    }
-
-    @PostMapping("/filter")
+    @GetMapping("filter")
     public String filterActions(@RequestParam String filter, Model model) {
-        ResponseEntity<List<Action>> responseEntity = toDoListController.getAction(
-                filter, null, null);
-        HttpStatus httpStatus = responseEntity.getStatusCode();
-        if (httpStatus.equals(HttpStatus.OK)) {
-            model.addAttribute("allActions", responseEntity.getBody());
-            return "index";
+        List<Action> actionList = actionService.getAllActionsByContent(filter);
+        if (!actionList.isEmpty()) {
+            model.addAttribute("allActions", actionList);
+            return MAIN_PAGE;
         }
-        model.addAttribute("httpStatus", httpStatus.toString());
-        return "errorlog";
+        model.addAttribute("httpStatus", HttpStatus.NOT_FOUND);
+        return ERROR_PAGE;
     }
 
     private String buildIndex(Model model) {
         model.addAttribute("allActions",
-                toDoListController.getAllActions(null, null).getBody());
-        return "index";
+                actionService.getAllActions());
+        return MAIN_PAGE;
     }
 }

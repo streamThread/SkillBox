@@ -1,4 +1,4 @@
-package main.model;
+package main.entity;
 
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
@@ -22,7 +22,7 @@ public class Action {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     @ApiModelProperty(value = "id number of your action")
-    private Integer id;
+    private Long id;
 
     @ApiModelProperty(value = "content of your action")
     private String content;
@@ -32,20 +32,20 @@ public class Action {
     private String addingTime;
 
     @ApiModelProperty(value = "adding time in 64bit-number format")
-    private long timeStamp;
+    private Long timeStamp;
 
     public Action(String content, Long timeStamp) {
-        setContent(content);
+        this.content = content;
         setTimeStamp(timeStamp);
     }
 
-    public Action(Integer id, String content, Long timeStamp) {
-        setId(id);
-        setContent(content);
+    public Action(Long id, String content, Long timeStamp) {
+        this.id = id;
+        this.content = content;
         setTimeStamp(timeStamp);
     }
 
-    public void setTimeStamp(long timeStamp) {
+    public void setTimeStamp(Long timeStamp) {
         this.timeStamp = timeStamp;
         this.addingTime = new Timestamp(timeStamp)
                 .toLocalDateTime()
