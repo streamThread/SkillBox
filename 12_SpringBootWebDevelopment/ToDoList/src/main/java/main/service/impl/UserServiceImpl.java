@@ -3,6 +3,7 @@ package main.service.impl;
 import main.entity.User;
 import main.repos.UserRepository;
 import main.service.UserService;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
@@ -24,5 +25,10 @@ public class UserServiceImpl implements UserService {
     @Override
     public User addUser(User user) {
         return userRepository.save(user);
+    }
+
+    @Override
+    public UserDetails loadUserByUsername(String login) {
+        return userRepository.findByLogin(login);
     }
 }

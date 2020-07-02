@@ -19,22 +19,23 @@
                     <button type="submit">Save</button>
                 </p>
             </form>
-            <form action="filter" method="get">
-                <input name="filter" type="text">
-                <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden"/>
+            <form action="/" method="get">
+                <input name="filter" th:value="${filter}" type="text">
                 <button type="submit">filter</button>
             </form>
         </caption>
         <tr>
             <th>Содержание</th>
             <th>Время добавления<br> или изменения</th>
+            <th>Логин</th>
         </tr>
         <tr th:each="action : ${allActions}">
             <td th:attr="data-id=${action.id}" th:text="${action.content}"></td>
             <td th:attr="data-id=${action.id}" th:text="${action.timeStamp}"></td>
+            <td th:attr="data-id=${action.id}" th:text="${action.owner.login}"></td>
             <td>
                 <form>
-                    <button formmethod="get" th:formaction="@{${action.id}+'/edit/'}" type="submit">Edit</button>
+                    <button formmethod="post" th:formaction="@{${action.id}+'/edit/'}" type="submit">Edit</button>
                     <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden"/>
                 </form>
             </td>

@@ -1,6 +1,7 @@
 package main.repos;
 
 import main.entity.Action;
+import main.entity.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -16,7 +17,11 @@ public interface ActionRepository extends CrudRepository<Action, Long> {
 
     List<Action> findAllByOrderById();
 
+    List<Action> findAllByOwnerOrderById(User user);
+
     List<Action> findByContentContaining(String query, Pageable pageable);
 
     List<Action> findByContentContaining(String query, Sort sort);
+
+    List<Action> findByContentContainingAndOwner(String query, User user, Sort sortById);
 }

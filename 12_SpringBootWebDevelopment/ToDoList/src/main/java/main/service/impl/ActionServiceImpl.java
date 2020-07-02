@@ -1,6 +1,7 @@
 package main.service.impl;
 
 import main.entity.Action;
+import main.entity.User;
 import main.repos.ActionRepository;
 import main.service.ActionService;
 import org.springframework.data.domain.PageRequest;
@@ -26,6 +27,11 @@ public class ActionServiceImpl implements ActionService {
     }
 
     @Override
+    public List<Action> getAllActionsByUser(User user) {
+        return actionRepository.findAllByOwnerOrderById(user);
+    }
+
+    @Override
     public List<Action> getActionsByPage(Integer pageNumber, Integer pageSize) {
         return actionRepository.findBy(PageRequest.of(pageNumber, pageSize, sortById)).getContent();
     }
@@ -38,6 +44,11 @@ public class ActionServiceImpl implements ActionService {
     @Override
     public List<Action> getAllActionsByContent(String query) {
         return actionRepository.findByContentContaining(query, sortById);
+    }
+
+    @Override
+    public List<Action> getAllActionsByUserAndContent(User user, String query) {
+        return actionRepository.findByContentContainingAndOwner(query, user, sortById);
     }
 
     @Override

@@ -1,8 +1,10 @@
 package main.controllers;
 
 import main.entity.Action;
+import main.entity.User;
 import main.service.ActionService;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -27,71 +29,74 @@ public class MainController {
     }
 
     @GetMapping
-    public String getMainPage(Model model) {
-        return buildIndex(model);
+    public String getMainPage(
+            @AuthenticationPrincipal User user,
+            @RequestParam(required = false, defaultValue = "") String filter,
+            Model model) {
+        List<Action> actionList;
+        if (!filter.isEmpty()) {
+            model.addAttribute("filter", filter);
+            actionList = actionService.getAllActionsByUserAndContent(user, filter);
+        } else {
+            actionList = actionService.getAllActionsByUser(user);
+        }
+        return !actionList.isEmpty() ?
+                buildIndexPage(actionList, model) :
+                buildErrorPage(HttpStatus.NOT_FOUND, model);
     }
 
+
     @PostMapping
-    public String putAction(@RequestParam String content, Model model) {
+    public String putAction(
+            @AuthenticationPrincipal User user,
+            @RequestParam String content, Model model) {
         Action action = new Action();
         action.setContent(content);
         action.setTimeStamp(LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS));
-        if (actionService.addActionToDB(action) != 0) {
-            return buildIndex(model);
-        }
-        model.addAttribute("httpStatus", HttpStatus.SERVICE_UNAVAILABLE);
-        return ERROR_PAGE;
+        action.setOwner(user);
+        return actionService.addActionToDB(action) != 0 ?
+                buildIndexPage(actionService.getAllActionsByUser(user), model) :
+                buildErrorPage(HttpStatus.SERVICE_UNAVAILABLE, model);
     }
 
     @PostMapping("{id}/del/")
     public String deleteAction(@PathVariable Long id, Model model) {
-        if (actionService.deleteActionIfExists(id)) {
-            return REDIRECT_TO_MAIN_PAGE;
-        }
-        model.addAttribute("httpStatus", HttpStatus.NOT_FOUND);
-        return ERROR_PAGE;
+        return actionService.deleteActionIfExists(id) ?
+                REDIRECT_TO_MAIN_PAGE :
+                buildErrorPage(HttpStatus.NOT_FOUND, model);
     }
 
-    @GetMapping("{id}/edit")
+    @PostMapping("{id}/edit")
     public String editAction(@PathVariable Long id, Model model) {
         return actionService.getAction(id)
                 .map(a -> {
-                    model.addAttribute("content", a.getContent());
-                    model.addAttribute("id", id);
+                    model.addAttribute("content", a.getContent())
+                            .addAttribute("id", id);
                     return EDIT_PAGE;
-                }).orElseGet(() -> {
-                    model.addAttribute("httpStatus", HttpStatus.NOT_FOUND);
-                    return ERROR_PAGE;
-                });
+                }).orElseGet(() -> buildErrorPage(HttpStatus.NOT_FOUND, model));
     }
 
     @PostMapping(EDIT_PAGE)
-    public String putEditedAction(@RequestParam Long id, @RequestParam String content, Model model) {
+    public String putEditedAction(
+            @AuthenticationPrincipal User user,
+            @RequestParam Long id, @RequestParam String content, Model model) {
         Action action = new Action();
         action.setId(id);
         action.setContent(content);
         action.setTimeStamp(LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS));
-        if (actionService.replaceActionToDBIfExists(action) != 0) {
-            return REDIRECT_TO_MAIN_PAGE;
-        }
-        model.addAttribute("httpStatus", HttpStatus.NOT_FOUND);
-        return ERROR_PAGE;
+        action.setOwner(user);
+        return actionService.replaceActionToDBIfExists(action) != 0 ?
+                REDIRECT_TO_MAIN_PAGE :
+                buildErrorPage(HttpStatus.NOT_FOUND, model);
     }
 
-    @GetMapping("filter")
-    public String filterActions(@RequestParam String filter, Model model) {
-        List<Action> actionList = actionService.getAllActionsByContent(filter);
-        if (!actionList.isEmpty()) {
-            model.addAttribute("allActions", actionList);
-            return MAIN_PAGE;
-        }
-        model.addAttribute("httpStatus", HttpStatus.NOT_FOUND);
-        return ERROR_PAGE;
-    }
-
-    private String buildIndex(Model model) {
-        model.addAttribute("allActions",
-                actionService.getAllActions());
+    private String buildIndexPage(List<Action> actionList, Model model) {
+        model.addAttribute("allActions", actionList);
         return MAIN_PAGE;
+    }
+
+    private String buildErrorPage(HttpStatus httpStatus, Model model) {
+        model.addAttribute("httpStatus", httpStatus);
+        return ERROR_PAGE;
     }
 }
