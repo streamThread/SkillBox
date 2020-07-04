@@ -29,21 +29,27 @@ public class ToDoListController {
     }
 
     @ApiOperation(value = "returns list of actions. Simple pagination available. You can optionally set the " +
-            "start and sample size")
+            "start and sample size. Also you can search text (if action contains that text)")
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<List<Action>> getAllActions(@ApiParam(value = "Number of page that you want to see. " +
-            "Numerate starts with zero")
-                                                      @RequestParam(required = false) Integer pageNumber,
-                                                      @ApiParam(value = "Action's count on page")
-                                                      @RequestParam(required = false) Integer pageSize) {
-        ResponseEntity<List<Action>> responseEntity;
+    public ResponseEntity<List<Action>> getAction(@ApiParam(
+            value = "text to search in the actions of ToDo list")
+                                                  @RequestParam(required = false) String query,
+                                                  @ApiParam(value = "Number of page that you want to see. " +
+                                                          "Numerate starts with zero")
+                                                  @RequestParam(required = false) Integer pageNumber,
+                                                  @ApiParam(value = "Action's count on page")
+                                                  @RequestParam(required = false) Integer pageSize) {
+        List<Action> actions;
         if (pageNumber == null || pageSize == null) {
-            responseEntity = ResponseEntity.ok(actionService.getAllActions());
+            if (query == null) actions = actionService.getAllActions();
+            else actions = actionService.getAllActionsByContent(query);
         } else {
-            responseEntity = ResponseEntity.ok()
-                    .body(actionService.getActionsByPage(pageNumber, pageSize));
+            if (query != null) actions = actionService.getAllActionsByContentByPage(query, pageNumber, pageSize);
+            else actions = actionService.getActionsByPage(pageNumber, pageSize);
         }
-        return responseEntity;
+        return actions.isEmpty() ?
+                ResponseEntity.notFound().build() :
+                ResponseEntity.ok(actions);
     }
 
     @ApiOperation(value = "returns action by requested id")
@@ -53,28 +59,6 @@ public class ToDoListController {
         return actionService.getAction(id)
                 .map(action -> new ResponseEntity<>(action, httpHeaders, HttpStatus.OK))
                 .orElse(ResponseEntity.notFound().build());
-    }
-
-    @ApiOperation(value = "returns action by search text (if action contains that text)")
-    @GetMapping(value = "search", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<List<Action>> getAction(@ApiParam(
-            value = "text to search in the actions of ToDo list", required = true)
-                                                  @RequestParam String query,
-                                                  @ApiParam(value = "Number of page that you want to see. " +
-                                                          "Numerate starts with zero")
-                                                  @RequestParam(required = false) Integer pageNumber,
-                                                  @ApiParam(value = "Action's count on page")
-                                                  @RequestParam(required = false) Integer pageSize) {
-        List<Action> actions;
-        if (pageNumber == null || pageSize == null) {
-            actions = actionService.getAllActionsByContent(query);
-        } else {
-            actions = actionService.getAllActionsByContentByPage(query,
-                    pageNumber, pageSize);
-        }
-        return actions.isEmpty() ?
-                ResponseEntity.notFound().build() :
-                ResponseEntity.ok(actions);
     }
 
     @ApiOperation(value = "add action to the list")

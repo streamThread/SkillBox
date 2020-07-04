@@ -6,8 +6,11 @@
 </head>
 <body>
 <div>
-    <form method="post" style="position: absolute; right: 20px" th:action="@{/logout}">
+    <form method="post" style="text-align: right" th:action="@{/logout}">
         <input type="submit" value="Sign Out"/>
+    </form>
+    <form style="text-align: right">
+        <button formaction="/user" formmethod="get">User list</button>
     </form>
     <table border="1px" cellpadding="10" cellspacing="0" style="margin: auto">
         <caption style="padding-bottom: 20px">

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>User Editor</title>
+    <style>
+        #main {
+            width: max-content;
+            margin: auto;
+        }
+
+        #clear {
+            clear: both;
+        }
+
+        #float {
+            float: right;
+        }
+    </style>
+</head>
+<body>
+<div id="main">
+    <h2>User Editor</h2>
+    <form action="/user" method="post">
+        <div><span>LOGIN:</span> <input id="float" name="userName" th:value="${user.login}" type="text"></div>
+        <div id="clear"><span>PASSWORD:</span> <input name="userPass" th:value="${user.password}" type="password"></div>
+        <div><label><span>IS ACTIVE:</span> <input name="isActive" th:checked="${user.active}" type="checkbox"></label>
+        </div>
+        <div th:each="role : ${roles}">
+            <label>
+                <span th:text="${role} + ':'"></span>
+                <input th:checked="${#sets.contains(user.roles, role)}" th:name="${role}" type="checkbox">
+            </label>
+        </div>
+        <input name="userId" th:value="${user.id}" type="hidden">
+        <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden"/>
+        <div>
+            <button type="submit">Save</button>
+        </div>
+    </form>
+</div>
+</body>
+</html>

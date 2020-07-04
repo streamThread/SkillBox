@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="https://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>List of Users</title>
+    <style>
+        table {
+            border-collapse: collapse;
+            border: 3px solid grey;
+            width: 600px;
+            margin: auto;
+        }
+
+        th, td {
+            border: 1px solid grey;
+            text-align: center;
+        }
+
+        caption {
+            font-size: xx-large;
+        }
+
+        a {
+            display: block;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+<table>
+    <caption>Список пользователей</caption>
+    <tr>
+        <th>Login</th>
+        <th>Active</th>
+        <th>Role</th>
+        <th>User edit</th>
+    </tr>
+    <tr th:each="user : ${users}">
+        <td th:text="${user.login}"></td>
+        <td th:text="${user.active}"></td>
+        <td><span th:each="role, iterStat : ${user.roles}"
+                  th:text="!${iterStat.last} ? ${role} + ', ': ${role}"></span></td>
+        <td><a th:href="@{'/user/'+${user.id}}">EDIT</a></td>
+    </tr>
+</table>
+<a href="/">Back to actions list</a>
+</body>
+</html>
