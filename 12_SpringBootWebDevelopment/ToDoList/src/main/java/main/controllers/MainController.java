@@ -29,20 +29,8 @@ public class MainController {
     }
 
     @GetMapping
-    public String getMainPage(
-            @AuthenticationPrincipal User user,
-            @RequestParam(required = false, defaultValue = "") String filter,
-            Model model) {
-        List<Action> actionList;
-        if (!filter.isEmpty()) {
-            model.addAttribute("filter", filter);
-            actionList = actionService.getAllActionsByUserAndContent(user, filter);
-        } else {
-            actionList = actionService.getAllActionsByUser(user);
-        }
-        return !actionList.isEmpty() ?
-                buildIndexPage(actionList, model) :
-                buildErrorPage(HttpStatus.NOT_FOUND, model);
+    public String getMainPage() {
+        return "index";
     }
 
 

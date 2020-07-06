@@ -17,7 +17,7 @@ public interface ActionRepository extends CrudRepository<Action, Long> {
 
     List<Action> findAllByOrderById();
 
-    List<Action> findAllByOwnerOrderById(User user);
+    List<Action> findAllByOwnerOrderByIdDesc(User user);
 
     List<Action> findByContentContaining(String query, Pageable pageable);
 

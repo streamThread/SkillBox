@@ -1,6 +1,6 @@
 package main;
 
-import main.model.Book;
+import main.entity.Book;
 
 import java.util.ArrayList;
 import java.util.HashMap;

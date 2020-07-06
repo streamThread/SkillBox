@@ -28,7 +28,7 @@ public class ActionServiceImpl implements ActionService {
 
     @Override
     public List<Action> getAllActionsByUser(User user) {
-        return actionRepository.findAllByOwnerOrderById(user);
+        return actionRepository.findAllByOwnerOrderByIdDesc(user);
     }
 
     @Override
@@ -48,7 +48,7 @@ public class ActionServiceImpl implements ActionService {
 
     @Override
     public List<Action> getAllActionsByUserAndContent(User user, String query) {
-        return actionRepository.findByContentContainingAndOwner(query, user, sortById);
+        return actionRepository.findByContentContainingAndOwner(query, user, Sort.by("id").descending());
     }
 
     @Override

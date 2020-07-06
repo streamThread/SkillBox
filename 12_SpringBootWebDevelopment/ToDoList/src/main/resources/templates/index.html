@@ -1,55 +1,177 @@
-<!DOCTYPE html>
 <html lang="en" xmlns:th="www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <title>ToDo List</title>
 </head>
 <body>
-<div>
-    <form method="post" style="text-align: right" th:action="@{/logout}">
-        <input type="submit" value="Sign Out"/>
-    </form>
-    <form style="text-align: right">
-        <button formaction="/user" formmethod="get">User list</button>
-    </form>
-    <table border="1px" cellpadding="10" cellspacing="0" style="margin: auto">
-        <caption style="padding-bottom: 20px">
-            <h2>Список дел</h2>
-            <form action="/" method="post">
-                <textarea cols="40" name="content" placeholder="Input your action" rows="3"></textarea>
-                <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden"/>
-                <p>
-                    <button type="submit">Save</button>
-                </p>
+<link crossorigin="anonymous" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css"
+      integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" rel="stylesheet">
+<script crossorigin="anonymous"
+        integrity="sha384-OgVRvuATP1z7JjHLkuOU7Xw704+h835Lr+6QL9UvYjZE3Ipu6Tp75j7Bh/kR0JKI"
+        src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js"></script>
+<div class="container-fluid">
+    <div class="manage-buttons">
+        <form action="/user" method="get">
+            <button class="btn btn-primary btn-sm">Пользователи</button>
+        </form>
+        <form action="/logout" method="get">
+            <button class="btn btn-primary btn-sm" type="submit">Выйти</button>
+        </form>
+    </div>
+    <div class="row">
+        <div class="col text-center mb-3">
+            <h4>Список дел</h4>
+        </div>
+    </div>
+    <div class="row justify-content-center">
+        <div class="col-4">
+            <form id="task-create-form">
+                <div class="input-group mb-3">
+                    <input class="form-control" id="task-content" name="content" placeholder="Добавьте задачу"
+                           type="text"/>
+                    <input id="token" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden"/>
+                    <div class="input-group-append">
+                        <button class="btn btn-outline-secondary save-button" id="task-save-button" type="submit">
+                            Добавить
+                        </button>
+                    </div>
+                </div>
             </form>
+        </div>
+    </div>
+    <div class="row justify-content-center">
+        <div class="col-4">
             <form action="/" method="get">
-                <input name="filter" th:value="${filter}" type="text">
-                <button type="submit">filter</button>
+                <div class="input-group mb-3">
+                    <input class="form-control" name="filter" th:value="${filter}" type="text">
+                    <div class="input-group-append">
+                        <button class="btn btn-outline-secondary" type="submit">Фильтровать</button>
+                    </div>
+                </div>
             </form>
-        </caption>
-        <tr>
-            <th>Содержание</th>
-            <th>Время добавления<br> или изменения</th>
-            <th>Логин</th>
-        </tr>
-        <tr th:each="action : ${allActions}">
-            <td th:attr="data-id=${action.id}" th:text="${action.content}"></td>
-            <td th:attr="data-id=${action.id}" th:text="${action.timeStamp}"></td>
-            <td th:attr="data-id=${action.id}" th:text="${action.owner.login}"></td>
-            <td>
-                <form>
-                    <button formmethod="post" th:formaction="@{${action.id}+'/edit/'}" type="submit">Edit</button>
-                    <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden"/>
-                </form>
-            </td>
-            <td>
-                <form>
-                    <button formmethod="post" th:formaction="@{${action.id}+'/del/'}" type="submit">Delete</button>
-                    <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden"/>
-                </form>
-            </td>
-        </tr>
-    </table>
+        </div>
+    </div>
+    <div class="row justify-content-center">
+        <div class="col-8">
+            <table class="table table-bordered">
+                <tbody id="tasks-list"></tbody>
+            </table>
+        </div>
+    </div>
 </div>
+<script>
+    (function () {
+        console.clear()
+        const taskCreateForm = document.querySelector("#task-create-form")
+        const taskDeleteButtons = document.querySelectorAll(".task-delete-button")
+        const csrfToken = taskCreateForm.querySelector("#token").value
+
+        taskCreateForm.addEventListener("submit", function (event) {
+            event.preventDefault()
+            const taskContent = event.target.content.value
+            createTask(taskContent)
+        })
+
+        document.addEventListener('click', function (event) {
+            if (event.target.classList.contains('task-delete-button')) {
+                deleteTask(event.target.dataset.id)
+            }
+        })
+
+        function createTask(taskContent) {
+            const createTaskCall = fetch('/actions/', {
+                method: 'POST',
+                body: JSON.stringify({
+                    content: taskContent,
+                    timeStamp: "2020-07-06T11:11:32.885Z"
+                }),
+                headers: {
+                    "Content-type": "application/json",
+                    "X-CSRF-TOKEN": csrfToken
+                }
+            })
+            createTaskCall.then(function (response) {
+                console.log('Task created', response.headers.get('Location'))
+                clearTaskContent()
+                fetchTasks()
+            })
+        }
+
+        //TODO: чето сломалось. Если остается одна задача, то падает 404
+        function deleteTask(taskId) {
+            fetch(`/actions/${taskId}`, {
+                method: 'DELETE',
+                headers: {
+                    "X-CSRF-TOKEN": csrfToken
+                }
+            }).then(response =>
+                fetchTasks())
+        }
+
+        function fetchTasks() {
+            const tasksListTable = document.querySelector("#tasks-list")
+            fetch("/actions/", {
+                headers: {
+                    "Accept": "application/json"
+                }
+            })
+                .then(async function (response) {
+                    const result = await response.json()
+                    const tasks = []
+                    tasks.push(`
+                        <tr>
+                            <th>Содержание</th>
+                            <th width="200">Время добавления или изменения</th>
+                        </tr>
+                    `)
+                    result.forEach(task => {
+                        tasks.push(`<tr>
+                            <td>${task.timeStamp}</td>
+                            <td>${task.content}</td>
+                            <td width="40px">
+                               <button data-id="${task.id}" class="task-edit-button btn btn-light">
+                                   <svg data-id="${task.id}" width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-pencil task-edit-button" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+<!--                                   TODO: добавил классы, иначе листенер не видел клик. Мб возможно сделать лучше -->
+                                       <path data-id="${task.id}" class="task-edit-button" fill-rule="evenodd" d="M11.293 1.293a1 1 0 0 1 1.414 0l2 2a1 1 0 0 1 0 1.414l-9 9a1 1 0 0 1-.39.242l-3 1a1 1 0 0 1-1.266-1.265l1-3a1 1 0 0 1 .242-.391l9-9zM12 2l2 2-9 9-3 1 1-3 9-9z"/>
+                                       <path data-id="${task.id}" class="task-edit-button" fill-rule="evenodd" d="M12.146 6.354l-2.5-2.5.708-.708 2.5 2.5-.707.708zM3 10v.5a.5.5 0 0 0 .5.5H4v.5a.5.5 0 0 0 .5.5H5v.5a.5.5 0 0 0 .5.5H6v-1.5a.5.5 0 0 0-.5-.5H5v-.5a.5.5 0 0 0-.5-.5H3z"/>
+                                    </svg>
+                                </button>
+                            </td>
+                            <td width="40px">
+                                <button data-id="${task.id}" class="task-delete-button btn btn-light">
+                                    <svg data-id="${task.id}" width="1em" height="1em" viewBox="0 0 16 16" class="task-delete-button bi bi-trash-fill" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                                        <path data-id="${task.id}" class="task-delete-button" fill-rule="evenodd" d="M2.5 1a1 1 0 0 0-1 1v1a1 1 0 0 0 1 1H3v9a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V4h.5a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H10a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1H2.5zm3 4a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 .5-.5zM8 5a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7A.5.5 0 0 1 8 5zm3 .5a.5.5 0 0 0-1 0v7a.5.5 0 0 0 1 0v-7z"/>
+                                    </svg>
+                                </button>
+                            </td>
+                        </tr>`)
+                        tasksListTable.innerHTML = tasks.join('')
+                    })
+                    // console.log('Tasks fetched', tasks)
+                })
+                .catch(error => {
+                    console.error('Все сломалось', error)
+                })
+        }
+
+        function clearTaskContent() {
+            const textArea = document.querySelector('#task-content')
+            textArea.value = ''
+        }
+
+        document.addEventListener("DOMContentLoaded", fetchTasks)
+    })()
+</script>
+<style>
+    .manage-buttons {
+        display: flex;
+        justify-content: flex-end;
+        padding: 20px;
+    }
+
+    .manage-buttons button {
+        margin-right: 20px;
+    }
+</style>
 </body>
 </html>

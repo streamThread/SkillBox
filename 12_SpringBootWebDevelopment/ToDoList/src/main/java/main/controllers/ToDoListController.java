@@ -4,11 +4,14 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import main.entity.Action;
+import main.entity.User;
 import main.entity.dto.PutActionDTO;
 import main.entity.dto.ReplaceActionDTO;
 import main.service.ActionService;
 import org.springframework.http.*;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import springfox.documentation.annotations.ApiIgnore;
 
 import java.net.URI;
 import java.util.List;
@@ -38,18 +41,18 @@ public class ToDoListController {
                                                           "Numerate starts with zero")
                                                   @RequestParam(required = false) Integer pageNumber,
                                                   @ApiParam(value = "Action's count on page")
-                                                  @RequestParam(required = false) Integer pageSize) {
+                                                  @RequestParam(required = false) Integer pageSize,
+                                                  @ApiIgnore
+                                                  @AuthenticationPrincipal User user) {
         List<Action> actions;
         if (pageNumber == null || pageSize == null) {
-            if (query == null) actions = actionService.getAllActions();
-            else actions = actionService.getAllActionsByContent(query);
+            if (query == null) actions = actionService.getAllActionsByUser(user);
+            else actions = actionService.getAllActionsByUserAndContent(user, query);
         } else {
             if (query != null) actions = actionService.getAllActionsByContentByPage(query, pageNumber, pageSize);
             else actions = actionService.getActionsByPage(pageNumber, pageSize);
         }
-        return actions.isEmpty() ?
-                ResponseEntity.notFound().build() :
-                ResponseEntity.ok(actions);
+        return ResponseEntity.ok(actions);
     }
 
     @ApiOperation(value = "returns action by requested id")
@@ -63,13 +66,15 @@ public class ToDoListController {
 
     @ApiOperation(value = "add action to the list")
     @PostMapping(produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Long> putAction(@ApiParam(value = "Content and time of adding an action", required = true)
-                                          @RequestBody PutActionDTO putActionDTO) {
+    public ResponseEntity<String> putAction(@ApiParam(value = "Content and time of adding an action", required = true)
+                                            @RequestBody PutActionDTO putActionDTO, @AuthenticationPrincipal User user
+    ) {
         Action action = new Action();
         action.setContent(putActionDTO.getContent());
         action.setTimeStamp(putActionDTO.getTimeStamp());
+        action.setOwner(user);
         Long id = actionService.addActionToDB(action);
-        return ResponseEntity.created(URI.create(String.format("/actions/%d", id))).body(id);
+        return ResponseEntity.created(URI.create(String.format("/actions/%d", id))).build();
     }
 
     @ApiOperation(value = "add action by id to the list (removes old action`s value by this id)")

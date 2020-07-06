@@ -1,7 +1,7 @@
 package main;
 
-import main.model.Book;
-import main.model.BookRepository;
+import main.entity.Book;
+import main.entity.BookRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
