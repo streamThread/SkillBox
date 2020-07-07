@@ -23,5 +23,5 @@ public interface ActionRepository extends CrudRepository<Action, Long> {
 
     List<Action> findByContentContaining(String query, Sort sort);
 
-    List<Action> findByContentContainingAndOwner(String query, User user, Sort sortById);
+    List<Action> findByContentContainingAndOwnerOrderByIdDesc(String query, User user);
 }

@@ -48,7 +48,7 @@ public class ActionServiceImpl implements ActionService {
 
     @Override
     public List<Action> getAllActionsByUserAndContent(User user, String query) {
-        return actionRepository.findByContentContainingAndOwner(query, user, Sort.by("id").descending());
+        return actionRepository.findByContentContainingAndOwnerOrderByIdDesc(query, user);
     }
 
     @Override

@@ -1,9 +1,10 @@
 package main.entity;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonView;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
+import main.util.View;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
@@ -11,6 +12,7 @@ import java.time.LocalDateTime;
 @Entity
 @ApiModel(description = "model to create action")
 @Data
+@JsonView(View.ActionWithOwnerLogin.class)
 public class Action {
 
     @Id
@@ -24,8 +26,7 @@ public class Action {
     @ApiModelProperty(value = "adding time")
     private LocalDateTime timeStamp;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "user_id")
-    @JsonIgnore
     private User owner;
 }

@@ -1,5 +1,6 @@
 package main.controllers;
 
+import com.fasterxml.jackson.annotation.JsonView;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -8,6 +9,7 @@ import main.entity.User;
 import main.entity.dto.PutActionDTO;
 import main.entity.dto.ReplaceActionDTO;
 import main.service.ActionService;
+import main.util.View;
 import org.springframework.http.*;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -31,6 +33,7 @@ public class ToDoListController {
         this.actionService = actionService;
     }
 
+    @JsonView(View.ActionWithOwnerLogin.class)
     @ApiOperation(value = "returns list of actions. Simple pagination available. You can optionally set the " +
             "start and sample size. Also you can search text (if action contains that text)")
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
@@ -67,7 +70,8 @@ public class ToDoListController {
     @ApiOperation(value = "add action to the list")
     @PostMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<String> putAction(@ApiParam(value = "Content and time of adding an action", required = true)
-                                            @RequestBody PutActionDTO putActionDTO, @AuthenticationPrincipal User user
+                                                @RequestBody PutActionDTO putActionDTO,
+                                            @ApiIgnore @AuthenticationPrincipal User user
     ) {
         Action action = new Action();
         action.setContent(putActionDTO.getContent());

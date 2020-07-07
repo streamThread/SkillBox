@@ -1,6 +1,8 @@
 package main.entity;
 
+import com.fasterxml.jackson.annotation.JsonView;
 import lombok.Data;
+import main.util.View;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
@@ -15,6 +17,7 @@ public class User implements UserDetails {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
+    @JsonView(View.ActionWithOwnerLogin.class)
     private String login;
     private String password;
     private boolean active;
