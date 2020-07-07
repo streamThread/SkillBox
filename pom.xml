@@ -30,6 +30,7 @@
         <module>13_NoSQL/MongoDB</module>
         <module>14_Performance/VoteAnalyzer</module>
         <module>14_Performance/CarNumberGenerator</module>
+        <module>15_BigData/HDFSExample</module>
     </modules>
 
 </project>
