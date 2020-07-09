@@ -21,7 +21,8 @@ public class FileAccess {
   /**
    * Initializes the class, using rootPath as "/" directory
    *
-   * @param rootPath - the path to the root of HDFS, for example, hdfs://localhost:32771
+   * @param rootPath - the path to the root of HDFS, for example,
+   *                 hdfs://localhost:32771
    */
   public FileAccess(String rootPath) throws URISyntaxException, IOException {
     Configuration configuration = new Configuration();

@@ -10,11 +10,13 @@ public class Main {
     fileAccess.create("/test/test.txt");
     fileAccess.append("/test/test.txt", "Hello Hadoop from JavaCode");
     System.out.println(fileAccess.read("/test/test.txt"));
-    System.out.println("Directory \"test/\" is exists: " + fileAccess.isDirectory("/test/"));
+    System.out.println(
+        "Directory \"test/\" is exists: " + fileAccess.isDirectory("/test/"));
     System.out.println("List of paths in \"test/\": " +
         String.join(", ", fileAccess.list("/test/")));
     System.out.println("Deleting \"test/\"");
     fileAccess.delete("/test/");
-    System.out.println("Directory \"test/\" is exists: " + fileAccess.isDirectory("/test/"));
+    System.out.println(
+        "Directory \"test/\" is exists: " + fileAccess.isDirectory("/test/"));
   }
 }
