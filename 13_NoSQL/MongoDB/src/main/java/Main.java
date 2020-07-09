@@ -1,3 +1,6 @@
+import static org.bson.codecs.configuration.CodecRegistries.fromProviders;
+import static org.bson.codecs.configuration.CodecRegistries.fromRegistries;
+
 import com.mongodb.MongoClientSettings;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
@@ -6,54 +9,56 @@ import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Sorts;
 import com.opencsv.bean.CsvToBeanBuilder;
-import org.bson.codecs.configuration.CodecRegistry;
-import org.bson.codecs.pojo.PojoCodecProvider;
-
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.List;
 import java.util.Objects;
-
-import static org.bson.codecs.configuration.CodecRegistries.fromProviders;
-import static org.bson.codecs.configuration.CodecRegistries.fromRegistries;
+import org.bson.codecs.configuration.CodecRegistry;
+import org.bson.codecs.pojo.PojoCodecProvider;
 
 public class Main {
-    public static void main(String[] args) {
-        List<Student> studentBeans = new CsvToBeanBuilder<Student>(
-                new BufferedReader(
-                        new InputStreamReader(
-                                Objects.requireNonNull(
-                                        Main.class.getClassLoader().getResourceAsStream("mongo.csv")))))
-                .withType(Student.class).build().parse();
 
-        MongoClient mongoClient = MongoClients.create("mongodb://127.0.0.1:27017");
+  public static void main(String[] args) {
+    List<Student> studentBeans = new CsvToBeanBuilder<Student>(
+        new BufferedReader(
+            new InputStreamReader(
+                Objects.requireNonNull(
+                    Main.class.getClassLoader()
+                        .getResourceAsStream("mongo.csv")))))
+        .withType(Student.class).build().parse();
 
-        CodecRegistry pojoCodecRegistry = fromRegistries(MongoClientSettings.getDefaultCodecRegistry(),
-                fromProviders(PojoCodecProvider.builder().automatic(true).build()));
+    MongoClient mongoClient = MongoClients.create("mongodb://127.0.0.1:27017");
 
-        MongoDatabase database = mongoClient.getDatabase("local").withCodecRegistry(pojoCodecRegistry);
+    CodecRegistry pojoCodecRegistry = fromRegistries(
+        MongoClientSettings.getDefaultCodecRegistry(),
+        fromProviders(PojoCodecProvider.builder().automatic(true).build()));
 
-        MongoCollection<Student> collection = database.getCollection("TestSkillDemo", Student.class);
+    MongoDatabase database = mongoClient.getDatabase("local")
+        .withCodecRegistry(pojoCodecRegistry);
 
-        collection.drop();
+    MongoCollection<Student> collection = database
+        .getCollection("TestSkillDemo", Student.class);
 
-        collection.insertMany(studentBeans);
+    collection.drop();
 
-        MongoCollection<Student> collectionFromDB = database.getCollection("TestSkillDemo", Student.class);
+    collection.insertMany(studentBeans);
 
-        System.out.printf("— общее количество студентов в базе: %d\r\n",
-                collectionFromDB.countDocuments());
+    MongoCollection<Student> collectionFromDB = database
+        .getCollection("TestSkillDemo", Student.class);
 
-        System.out.printf("— количество студентов старше 40 лет: %d\r\n",
-                collectionFromDB.countDocuments(Filters.gt("age", 40)));
+    System.out.printf("— общее количество студентов в базе: %d\r\n",
+        collectionFromDB.countDocuments());
 
-        System.out.printf("- имя самого молодого студента: %s \r\n",
-                Objects.requireNonNull(collectionFromDB.find()
-                        .sort(Sorts.ascending("age")).first()).getName());
+    System.out.printf("— количество студентов старше 40 лет: %d\r\n",
+        collectionFromDB.countDocuments(Filters.gt("age", 40)));
 
-        System.out.print("- список курсов самого старого студента: ");
+    System.out.printf("- имя самого молодого студента: %s \r\n",
         Objects.requireNonNull(collectionFromDB.find()
-                .sort(Sorts.descending("age")).first())
-                .getCourses().forEach(a -> System.out.print(a + " "));
-    }
+            .sort(Sorts.ascending("age")).first()).getName());
+
+    System.out.print("- список курсов самого старого студента: ");
+    Objects.requireNonNull(collectionFromDB.find()
+        .sort(Sorts.descending("age")).first())
+        .getCourses().forEach(a -> System.out.print(a + " "));
+  }
 }

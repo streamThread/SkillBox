@@ -4,25 +4,26 @@ import org.hibernate.Transaction;
 
 public class Main {
 
-    public static void main(String[] args) {
+  public static void main(String[] args) {
 
-        SessionFactory sessionFactory = SessionFactoryUtil.getSessionFactory();
+    SessionFactory sessionFactory = SessionFactoryUtil.getSessionFactory();
 
-        Session session = sessionFactory.openSession();
+    Session session = sessionFactory.openSession();
 
-        try (session) {
+    try (session) {
 
-            Transaction transaction = session.beginTransaction();
+      Transaction transaction = session.beginTransaction();
 
-            String queryInsert = "insert into LinkedPurchaseList(courseId, studentId) " +
-                    "select (select c from Courses c where c.name = p.courseName), " +
-                    "(select s from Students s where s.name = p.name) from PurchaseList p";
+      String queryInsert =
+          "insert into LinkedPurchaseList(courseId, studentId) " +
+              "select (select c from Courses c where c.name = p.courseName), " +
+              "(select s from Students s where s.name = p.name) from PurchaseList p";
 
-            int rows = session.createQuery(queryInsert).executeUpdate();
+      int rows = session.createQuery(queryInsert).executeUpdate();
 
-            System.out.println("rows : " + rows);
+      System.out.println("rows : " + rows);
 
-            transaction.commit();
-        }
+      transaction.commit();
     }
+  }
 }

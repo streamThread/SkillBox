@@ -1,17 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Configuration status="WARN">
-    <Appenders>
-        <Console name="Console" target="SYSTEM_OUT">
-            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n"/>
-        </Console>
-    </Appenders>
-    <Loggers>
-        <Root level="info">
-            <AppenderRef ref="Console"/>
-        </Root>
-        <Logger name="org.hibernate" level="info"/>
-        <Logger name="org.hibernate.SQL" level="debug"/>
-        <Logger name="org.hibernate.type.descriptor.sql" level="trace"/>
-        <Logger name="org.hibernate.stat" level="debug"/>
-    </Loggers>
+  <Appenders>
+    <Console name="Console" target="SYSTEM_OUT">
+      <PatternLayout
+        pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n"/>
+    </Console>
+  </Appenders>
+  <Loggers>
+    <Logger level="info" name="org.hibernate"/>
+    <Logger level="debug" name="org.hibernate.SQL"/>
+    <Logger level="trace" name="org.hibernate.type.descriptor.sql"/>
+    <Logger level="debug" name="org.hibernate.stat"/>
+    <Root level="info">
+      <AppenderRef ref="Console"/>
+    </Root>
+  </Loggers>
 </Configuration>

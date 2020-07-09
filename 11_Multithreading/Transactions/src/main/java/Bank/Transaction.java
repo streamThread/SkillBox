@@ -1,12 +1,12 @@
 package Bank;
 
-import lombok.Value;
-
 import java.math.BigDecimal;
+import lombok.Value;
 
 @Value
 public class Transaction {
-    Account from;
-    Account to;
-    BigDecimal amount;
+
+  Account from;
+  Account to;
+  BigDecimal amount;
 }

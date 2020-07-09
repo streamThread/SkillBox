@@ -1,23 +1,22 @@
-public class Friend implements Comparable<Friend>
-{
-    private final String name;
+public class Friend implements Comparable<Friend> {
 
-    public Friend(String name) {
-        this.name = name;
-    }
+  private final String name;
 
-    public String getName() {
-        return this.name;
-    }
+  public Friend(String name) {
+    this.name = name;
+  }
 
-    public synchronized void throwBallTo(Friend catcher)
-    {
-        System.out.format("%s: %s кинул мне мяч!%n", catcher.getName(), this.name);
-        catcher.throwBallTo(this);
-    }
+  public String getName() {
+    return this.name;
+  }
 
-    @Override
-    public int compareTo(Friend o) {
-        return this.getName().compareTo(o.getName());
-    }
+  public synchronized void throwBallTo(Friend catcher) {
+    System.out.format("%s: %s кинул мне мяч!%n", catcher.getName(), this.name);
+    catcher.throwBallTo(this);
+  }
+
+  @Override
+  public int compareTo(Friend o) {
+    return this.getName().compareTo(o.getName());
+  }
 }

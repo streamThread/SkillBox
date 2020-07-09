@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class Good {
-    private String name;
-    private Integer price;
+
+  private String name;
+  private Integer price;
 }

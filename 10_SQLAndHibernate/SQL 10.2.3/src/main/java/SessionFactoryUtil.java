@@ -3,16 +3,16 @@ import org.hibernate.cfg.Configuration;
 
 public class SessionFactoryUtil {
 
-    private static volatile SessionFactory sessionFactory;
+  private static volatile SessionFactory sessionFactory;
 
-    private SessionFactoryUtil() {
-    }
+  private SessionFactoryUtil() {
+  }
 
-    public static synchronized SessionFactory getSessionFactory() {
-        if (sessionFactory == null) {
-            sessionFactory = new Configuration().configure("hibernate.cfg.xml").
-                    buildSessionFactory();
-        }
-        return sessionFactory;
+  public static synchronized SessionFactory getSessionFactory() {
+    if (sessionFactory == null) {
+      sessionFactory = new Configuration().configure("hibernate.cfg.xml").
+          buildSessionFactory();
     }
+    return sessionFactory;
+  }
 }
