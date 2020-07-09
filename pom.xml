@@ -21,6 +21,7 @@
         <module>14_Performance/VoteAnalyzer</module>
         <module>14_Performance/CarNumberGenerator</module>
         <module>15_BigData/HDFSExample</module>
+      <module>15_BigData/Spark</module>
     </modules>
     <packaging>pom</packaging>
 
