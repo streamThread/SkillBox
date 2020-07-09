@@ -1,25 +1,29 @@
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="https://www.thymeleaf.org">
 <head>
-    <title>Login Page</title>
+  <title>Login Page</title>
 </head>
 <body>
 <div style="margin: 0 auto; text-align: center">Login Page</div>
-<div style="display: table; margin: 0 auto; text-align: center" th:if="${param.error}">
-    Invalid username and password.
+<div style="display: table; margin: 0 auto; text-align: center"
+     th:if="${param.error}">
+  Invalid username and password.
 </div>
-<div style="display: table; margin: 0 auto; text-align: center" th:if="${param.logout}">
-    You have been logged out.
+<div style="display: table; margin: 0 auto; text-align: center"
+     th:if="${param.logout}">
+  You have been logged out.
 </div>
 <div style="display: table; margin: 0 auto; text-align: center">
-    <form method="post" th:action="@{/login}">
-        <div><label> User Name : <input name="username" type="text"/> </label></div>
-        <div><label> Password: <input name="password" type="password"/> </label></div>
-        <input type="submit" value="Log In">
-    </form>
-    <form>
-        <input formaction="/registration" formmethod="get" type="submit" value="Sign In"/>
-    </form>
+  <form method="post" th:action="@{/login}">
+    <div><label> User Name : <input name="username" type="text"/> </label></div>
+    <div><label> Password: <input name="password" type="password"/> </label>
+    </div>
+    <input type="submit" value="Log In">
+  </form>
+  <form>
+    <input formaction="/registration" formmethod="get" type="submit"
+           value="Sign In"/>
+  </form>
 </div>
 </body>
 </html>

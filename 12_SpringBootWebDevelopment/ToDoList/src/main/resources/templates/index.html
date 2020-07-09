@@ -1,132 +1,140 @@
 <html lang="en" xmlns:th="www.thymeleaf.org">
 <head>
-    <meta charset="UTF-8">
-    <title>ToDo List</title>
+  <meta charset="UTF-8">
+  <title>ToDo List</title>
 </head>
 <body>
-<link crossorigin="anonymous" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css"
-      integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" rel="stylesheet">
+<link crossorigin="anonymous"
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css"
+      integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk"
+      rel="stylesheet">
 <script crossorigin="anonymous"
         integrity="sha384-OgVRvuATP1z7JjHLkuOU7Xw704+h835Lr+6QL9UvYjZE3Ipu6Tp75j7Bh/kR0JKI"
         src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js"></script>
 <div class="container-fluid">
-    <div class="manage-buttons">
-        <form action="/user" method="get">
-            <button class="btn btn-primary btn-sm">Пользователи</button>
-        </form>
-        <form action="/logout" method="get">
-            <button class="btn btn-primary btn-sm" type="submit">Выйти</button>
-        </form>
+  <div class="manage-buttons">
+    <form action="/user" method="get">
+      <button class="btn btn-primary btn-sm">Пользователи</button>
+    </form>
+    <form action="/logout" method="get">
+      <button class="btn btn-primary btn-sm" type="submit">Выйти</button>
+    </form>
+  </div>
+  <div class="row">
+    <div class="col text-center mb-3">
+      <h4>Список дел</h4>
     </div>
-    <div class="row">
-        <div class="col text-center mb-3">
-            <h4>Список дел</h4>
+  </div>
+  <div class="row justify-content-center">
+    <div class="col-4">
+      <form id="task-create-form">
+        <div class="input-group mb-3">
+          <input class="form-control" id="task-content" name="content"
+                 placeholder="Добавьте задачу"
+                 type="text"/>
+          <input id="token" th:name="${_csrf.parameterName}"
+                 th:value="${_csrf.token}" type="hidden"/>
+          <div class="input-group-append">
+            <button class="btn btn-outline-secondary save-button"
+                    id="task-save-button" type="submit">
+              Добавить
+            </button>
+          </div>
         </div>
+      </form>
     </div>
-    <div class="row justify-content-center">
-        <div class="col-4">
-            <form id="task-create-form">
-                <div class="input-group mb-3">
-                    <input class="form-control" id="task-content" name="content" placeholder="Добавьте задачу"
-                           type="text"/>
-                    <input id="token" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden"/>
-                    <div class="input-group-append">
-                        <button class="btn btn-outline-secondary save-button" id="task-save-button" type="submit">
-                            Добавить
-                        </button>
-                    </div>
-                </div>
-            </form>
+  </div>
+  <div class="row justify-content-center">
+    <div class="col-4">
+      <form action="/" method="get">
+        <div class="input-group mb-3">
+          <input class="form-control" name="filter" th:value="${filter}"
+                 type="text">
+          <div class="input-group-append">
+            <button class="btn btn-outline-secondary" type="submit">
+              Фильтровать
+            </button>
+          </div>
         </div>
+      </form>
     </div>
-    <div class="row justify-content-center">
-        <div class="col-4">
-            <form action="/" method="get">
-                <div class="input-group mb-3">
-                    <input class="form-control" name="filter" th:value="${filter}" type="text">
-                    <div class="input-group-append">
-                        <button class="btn btn-outline-secondary" type="submit">Фильтровать</button>
-                    </div>
-                </div>
-            </form>
-        </div>
+  </div>
+  <div class="row justify-content-center">
+    <div class="col-8">
+      <table class="table table-bordered">
+        <tbody id="tasks-list"></tbody>
+      </table>
     </div>
-    <div class="row justify-content-center">
-        <div class="col-8">
-            <table class="table table-bordered">
-                <tbody id="tasks-list"></tbody>
-            </table>
-        </div>
-    </div>
+  </div>
 </div>
 <script>
-    (function () {
-        console.clear()
-        const taskCreateForm = document.querySelector("#task-create-form")
-        const csrfToken = taskCreateForm.querySelector("#token").value
+  (function () {
+    console.clear()
+    const taskCreateForm = document.querySelector("#task-create-form")
+    const csrfToken = taskCreateForm.querySelector("#token").value
 
-        taskCreateForm.addEventListener("submit", function (event) {
-            event.preventDefault()
-            const taskContent = event.target.content.value
-            createTask(taskContent)
-        })
+    taskCreateForm.addEventListener("submit", function (event) {
+      event.preventDefault()
+      const taskContent = event.target.content.value
+      createTask(taskContent)
+    })
 
-        document.addEventListener('click', function (event) {
-            if (event.target.classList.contains('task-delete-button')) {
-                deleteTask(event.target.dataset.id)
-            }
-        })
+    document.addEventListener('click', function (event) {
+      if (event.target.classList.contains('task-delete-button')) {
+        deleteTask(event.target.dataset.id)
+      }
+    })
 
-        function createTask(taskContent) {
-            const createTaskCall = fetch('/actions/', {
-                method: 'POST',
-                body: JSON.stringify({
-                    content: taskContent,
-                    timeStamp: "2020-07-06T11:11:32.885Z"
-                }),
-                headers: {
-                    "Content-type": "application/json",
-                    "X-CSRF-TOKEN": csrfToken
-                }
-            })
-            createTaskCall.then(function (response) {
-                console.log('Task created', response.headers.get('Location'))
-                clearTaskContent()
-                fetchTasks()
-            })
+    function createTask(taskContent) {
+      const createTaskCall = fetch('/actions/', {
+        method: 'POST',
+        body: JSON.stringify({
+          content: taskContent,
+          timeStamp: "2020-07-06T11:11:32.885Z"
+        }),
+        headers: {
+          "Content-type": "application/json",
+          "X-CSRF-TOKEN": csrfToken
         }
+      })
+      createTaskCall.then(function (response) {
+        console.log('Task created', response.headers.get('Location'))
+        clearTaskContent()
+        fetchTasks()
+      })
+    }
 
-        function deleteTask(taskId) {
-            fetch(`/actions/${taskId}`, {
-                method: 'DELETE',
-                headers: {
-                    "X-CSRF-TOKEN": csrfToken
-                }
-            }).then(async function (response) {
-                fetchTasks()
-            })
+    function deleteTask(taskId) {
+      fetch(`/actions/${taskId}`, {
+        method: 'DELETE',
+        headers: {
+          "X-CSRF-TOKEN": csrfToken
         }
+      }).then(async function (response) {
+        fetchTasks()
+      })
+    }
 
-        function fetchTasks() {
-            const tasksListTable = document.querySelector("#tasks-list")
-            const noTasks = document.querySelector("#tasks-not-present")
-            fetch("/actions/", {
-                headers: {
-                    "Accept": "application/json"
-                }
-            })
-                .then(async function (response) {
-                    const result = await response.json()
-                    if (result.length > 0) {
-                        const tasks = []
-                        tasks.push(`
+    function fetchTasks() {
+      const tasksListTable = document.querySelector("#tasks-list")
+      const noTasks = document.querySelector("#tasks-not-present")
+      fetch("/actions/", {
+        headers: {
+          "Accept": "application/json"
+        }
+      })
+      .then(async function (response) {
+        const result = await response.json()
+        if (result.length > 0) {
+          const tasks = []
+          tasks.push(`
                         <tr>
                             <th width="200">Время добавления или изменения</th>
                             <th>Содержание</th>
                         </tr>
                     `)
-                        result.forEach(task => {
-                            tasks.push(`<tr>
+          result.forEach(task => {
+            tasks.push(`<tr>
                             <td>${task.timeStamp}</td>
                             <td>${task.content}</td>
                             <td width="40px">
@@ -145,40 +153,40 @@
                                 </button>
                             </td>
                         </tr>`)
-                            tasksListTable.innerHTML = tasks.join('')
-                        })
-                    } else {
-                        tasksListTable.innerHTML = '<h5 id="tasks-not-present">Задачи отсутствуют</h5>'
-                    }
-                })
-                .catch(error => {
-                    console.error('Все сломалось', error)
-                })
+            tasksListTable.innerHTML = tasks.join('')
+          })
+        } else {
+          tasksListTable.innerHTML = '<h5 id="tasks-not-present">Задачи отсутствуют</h5>'
         }
+      })
+      .catch(error => {
+        console.error('Все сломалось', error)
+      })
+    }
 
-        function clearTaskContent() {
-            const textArea = document.querySelector('#task-content')
-            textArea.value = ''
-        }
+    function clearTaskContent() {
+      const textArea = document.querySelector('#task-content')
+      textArea.value = ''
+    }
 
-        document.addEventListener("DOMContentLoaded", fetchTasks)
-    })()
+    document.addEventListener("DOMContentLoaded", fetchTasks)
+  })()
 </script>
 <style>
-    .manage-buttons {
-        display: flex;
-        justify-content: flex-end;
-        padding: 20px;
-    }
+  .manage-buttons {
+    display: flex;
+    justify-content: flex-end;
+    padding: 20px;
+  }
 
-    .manage-buttons button {
-        margin-right: 20px;
-    }
+  .manage-buttons button {
+    margin-right: 20px;
+  }
 
-    #tasks-not-present {
-        display: flex;
-        justify-content: center;
-    }
+  #tasks-not-present {
+    display: flex;
+    justify-content: center;
+  }
 </style>
 </body>
 </html>
