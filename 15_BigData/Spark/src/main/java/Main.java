@@ -1,4 +1,5 @@
 import java.util.Arrays;
+import java.util.List;
 import java.util.regex.Pattern;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
@@ -8,6 +9,7 @@ import scala.Tuple2;
 public class Main {
 
   private static final Pattern SPACE = Pattern.compile("\\s+");
+  private static final String REG_NON_ALPHABET = "[^А-яA-z\\s]";
 
   public static void main(String[] args) {
     if (args.length != 2) {
@@ -15,17 +17,22 @@ public class Main {
       System.exit(1);
     }
 
+    final String inFile = args[0];
+    final String outFile = args[1];
+
     SparkSession spark = SparkSession
         .builder()
         .appName("JavaWordCount")
         .config("spark.master", "local")
         .getOrCreate();
 
-    JavaRDD<String> lines = spark.read().textFile(args[0]).javaRDD();
+    JavaRDD<String> lines = spark.read().textFile(inFile).javaRDD();
 
     JavaRDD<String> words = lines
-        .flatMap(s -> Arrays.asList(SPACE.split(s.replaceAll("[^А-яA-z\\s]",
-            ""))).iterator());
+        .map(l -> l.replaceAll(REG_NON_ALPHABET, ""))
+        .map(SPACE::split)
+        .map(Arrays::asList)
+        .flatMap(List::iterator);
 
     JavaPairRDD<String, Integer> ones = words.filter(s1 -> !s1.isEmpty())
         .mapToPair(s -> new Tuple2<>(s, 1));
@@ -35,7 +42,7 @@ public class Main {
     JavaPairRDD<String, Integer> sortResult =
         counts.mapToPair(Tuple2::swap).sortByKey(false).mapToPair(Tuple2::swap);
 
-    sortResult.saveAsTextFile(args[1]);
+    sortResult.saveAsTextFile(outFile);
 
     spark.stop();
   }
