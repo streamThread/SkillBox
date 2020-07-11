@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="forms.CollapseForm">
+  <grid id="27dc6" binding="mainPanel" layout-manager="GridLayoutManager" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+    <margin top="20" left="20" bottom="20" right="20"/>
+    <constraints>
+      <xy x="20" y="20" width="541" height="400"/>
+    </constraints>
+    <properties/>
+    <border type="none">
+      <color color="-10777636"/>
+    </border>
+    <children>
+      <grid id="19f97" binding="inputPanel" layout-manager="FormLayout">
+        <rowspec value="center:d:noGrow"/>
+        <rowspec value="top:4dlu:noGrow"/>
+        <rowspec value="center:max(d;4px):noGrow"/>
+        <rowspec value="top:4dlu:noGrow"/>
+        <rowspec value="center:max(d;4px):noGrow"/>
+        <rowspec value="top:4dlu:noGrow"/>
+        <rowspec value="center:max(d;4px):noGrow"/>
+        <colspec value="fill:78px:noGrow"/>
+        <colspec value="left:4dlu:noGrow"/>
+        <colspec value="fill:150px:grow"/>
+        <constraints>
+          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="0" indent="0" use-parent-layout="false"/>
+        </constraints>
+        <properties/>
+        <border type="line" title="Введите ФИО:" title-justification="2" title-position="2">
+          <font/>
+          <title-color color="-11438438"/>
+          <color color="-2301466"/>
+        </border>
+        <children>
+          <component id="40d54" class="javax.swing.JTextField" binding="thirdName">
+            <constraints>
+              <grid row="4" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false">
+                <minimum-size width="50" height="-1"/>
+                <preferred-size width="150" height="-1"/>
+                <maximum-size width="300" height="-1"/>
+              </grid>
+              <forms defaultalign-horz="false"/>
+            </constraints>
+            <properties>
+              <columns value="15"/>
+              <horizontalAlignment value="10"/>
+            </properties>
+          </component>
+          <component id="a129e" class="javax.swing.JButton" binding="collapseButton" default-binding="true">
+            <constraints>
+              <grid row="6" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="0" indent="0" use-parent-layout="false"/>
+              <forms defaultalign-horz="false"/>
+            </constraints>
+            <properties>
+              <enabled value="true"/>
+              <foreground color="-11438438"/>
+              <horizontalAlignment value="0"/>
+              <horizontalTextPosition value="0"/>
+              <text value="Collapse"/>
+            </properties>
+          </component>
+          <component id="84cd0" class="javax.swing.JLabel">
+            <constraints>
+              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="4" fill="0" indent="0" use-parent-layout="false"/>
+              <forms defaultalign-horz="false"/>
+            </constraints>
+            <properties>
+              <foreground color="-12950386"/>
+              <horizontalAlignment value="0"/>
+              <horizontalTextPosition value="4"/>
+              <labelFor value="27484"/>
+              <text value="Фамилия*"/>
+            </properties>
+          </component>
+          <component id="be0ef" class="javax.swing.JLabel">
+            <constraints>
+              <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="4" fill="0" indent="0" use-parent-layout="false"/>
+              <forms defaultalign-horz="false"/>
+            </constraints>
+            <properties>
+              <foreground color="-12950386"/>
+              <horizontalAlignment value="0"/>
+              <horizontalTextPosition value="4"/>
+              <labelFor value="4f198"/>
+              <text value="Имя*"/>
+            </properties>
+          </component>
+          <component id="217f9" class="javax.swing.JLabel">
+            <constraints>
+              <grid row="4" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="4" fill="0" indent="0" use-parent-layout="false"/>
+              <forms defaultalign-horz="false"/>
+            </constraints>
+            <properties>
+              <foreground color="-12950386"/>
+              <horizontalAlignment value="0"/>
+              <horizontalTextPosition value="4"/>
+              <labelFor value="40d54"/>
+              <text value="Отчество"/>
+            </properties>
+          </component>
+          <component id="4f198" class="javax.swing.JTextField" binding="name">
+            <constraints>
+              <grid row="2" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false">
+                <minimum-size width="50" height="-1"/>
+                <preferred-size width="150" height="-1"/>
+                <maximum-size width="300" height="-1"/>
+              </grid>
+              <forms defaultalign-horz="false"/>
+            </constraints>
+            <properties>
+              <columns value="15"/>
+              <horizontalAlignment value="10"/>
+            </properties>
+          </component>
+          <component id="27484" class="javax.swing.JTextField" binding="surName">
+            <constraints>
+              <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false">
+                <minimum-size width="50" height="-1"/>
+                <preferred-size width="150" height="-1"/>
+                <maximum-size width="300" height="-1"/>
+              </grid>
+              <forms defaultalign-horz="false"/>
+            </constraints>
+            <properties>
+              <columns value="15"/>
+              <editable value="true"/>
+              <enabled value="true"/>
+              <horizontalAlignment value="10"/>
+            </properties>
+          </component>
+        </children>
+      </grid>
+    </children>
+  </grid>
+</form>
