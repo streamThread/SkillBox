@@ -8,7 +8,7 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 import util.MyAppMainFrame;
 
-public class ExpandForm {
+public class ExpandForm implements MyForm {
 
   private static final String FULL_NAME_LATIN =
       "((?<=\\b)[A-Z][a-z]{0,99}(-[A-Z][a-z]{0,99}){0,20}\\s*){2,3}";
@@ -36,26 +36,19 @@ public class ExpandForm {
         }
 
         String[] nameParts = fullNameStr.split("\\s+");
-        CollapseForm collapseForm = new CollapseForm();
-        collapseForm.getSurName().setText(nameParts[0]);
-        collapseForm.getName().setText(nameParts[1]);
-        if (nameParts.length == 3) {
-          collapseForm.getThirdName().setText(nameParts[2]);
-        }
-        MyAppMainFrame.getInstance().remove(expandPanel);
-        MyAppMainFrame.getInstance().add(collapseForm.getMainPanel());
-        MyAppMainFrame.getInstance().pack();
-        MyAppMainFrame.getInstance().repaint();
-        MyAppMainFrame.getInstance().validate();
+        CollapseForm collapseForm = new CollapseForm(nameParts);
+        MyAppMainFrame.getInstance().changeMainForm(collapseForm);
       }
     });
   }
 
-  public JPanel getExpandPanel() {
-    return expandPanel;
+  public ExpandForm(String fullName) {
+    this();
+    this.fullName.setText(fullName);
   }
 
-  public JTextField getFullName() {
-    return fullName;
+  @Override
+  public JPanel getContentPanel() {
+    return expandPanel;
   }
 }

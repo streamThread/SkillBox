@@ -8,9 +8,9 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 import util.MyAppMainFrame;
 
-public class CollapseForm {
+public class CollapseForm implements MyForm {
 
-  private JPanel mainPanel;
+  private JPanel collapsePanel;
   private JTextField surName;
   private JTextField name;
   private JTextField thirdName;
@@ -27,38 +27,41 @@ public class CollapseForm {
         String thirdNameStr = thirdName.getText();
         if (nameStr.isBlank() || surnameStr.isBlank()) {
           JOptionPane
-              .showMessageDialog(mainPanel,
+              .showMessageDialog(collapsePanel,
                   "Пожалуйста введите Фамилию и Имя. \r\n"
                       + "Отчество - по желанию",
                   "Ошибка",
                   JOptionPane.ERROR_MESSAGE);
           return;
         }
-        ExpandForm expandForm = new ExpandForm();
-        expandForm.getFullName()
-            .setText(surnameStr + " " + nameStr + " " + thirdNameStr);
-        MyAppMainFrame.getInstance().remove(mainPanel);
-        MyAppMainFrame.getInstance().add(expandForm.getExpandPanel());
-        MyAppMainFrame.getInstance().pack();
-        MyAppMainFrame.getInstance().repaint();
-        MyAppMainFrame.getInstance().validate();
+        ExpandForm expandForm = new ExpandForm(
+            String.join(" ", surnameStr, nameStr, thirdNameStr));
+        MyAppMainFrame.getInstance().changeMainForm(expandForm);
+
       }
     });
   }
 
-  public JPanel getMainPanel() {
-    return mainPanel;
+  public CollapseForm(String... fullNameParts) {
+    this();
+    int fullNamePartsLenght = fullNameParts.length;
+    if (fullNamePartsLenght > 3) {
+      throw new IllegalArgumentException(
+          "Wrong arguments count " + fullNamePartsLenght);
+    }
+    if (fullNamePartsLenght >= 1) {
+      surName.setText(fullNameParts[0]);
+    }
+    if (fullNamePartsLenght >= 2) {
+      name.setText(fullNameParts[1]);
+    }
+    if (fullNamePartsLenght == 3) {
+      thirdName.setText(fullNameParts[2]);
+    }
   }
 
-  public JTextField getSurName() {
-    return surName;
-  }
-
-  public JTextField getName() {
-    return name;
-  }
-
-  public JTextField getThirdName() {
-    return thirdName;
+  @Override
+  public JPanel getContentPanel() {
+    return collapsePanel;
   }
 }
