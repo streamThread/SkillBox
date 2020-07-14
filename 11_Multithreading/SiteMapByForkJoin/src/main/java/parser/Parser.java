@@ -1,3 +1,5 @@
+package parser;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -16,7 +18,7 @@ import org.jsoup.nodes.Element;
 @Log4j2
 public class Parser extends RecursiveTask<Parser.ParseResults> {
 
-  private static final Set<String> allreadyParsed = Collections
+  private static final Set<String> alreadyParsed = Collections
       .synchronizedSet(new HashSet<>());
   private static String mainUrl;
   private final ParseResults parseResults;
@@ -30,9 +32,13 @@ public class Parser extends RecursiveTask<Parser.ParseResults> {
       url += "/";
     }
     mainUrl = url;
-    allreadyParsed.clear();
-    allreadyParsed.add(url);
+    alreadyParsed.clear();
+    alreadyParsed.add(url);
     return new Parser(url);
+  }
+
+  public static Set<String> getAlreadyParsed() {
+    return alreadyParsed;
   }
 
   @Override
@@ -43,8 +49,12 @@ public class Parser extends RecursiveTask<Parser.ParseResults> {
     try {
       Thread.sleep(new Random().nextInt(100) + 100);
       document = Jsoup.connect(parseResults.URL).maxBodySize(0).get();
-    } catch (IOException | InterruptedException e) {
+    } catch (IOException e) {
       log.error(e);
+      return parseResults;
+    } catch (InterruptedException e) {
+      log.error(e);
+      Thread.currentThread().interrupt();
       return parseResults;
     }
 
@@ -66,8 +76,9 @@ public class Parser extends RecursiveTask<Parser.ParseResults> {
     ArrayList<Parser> parsers = new ArrayList<>();
 
     if (!parseResults.urlsSet.isEmpty()) {
+
       for (String str : parseResults.urlsSet) {
-        if (allreadyParsed.add(str)) {
+        if (alreadyParsed.add(str)) {
           parsers.add(new Parser(str));
         }
       }
@@ -87,16 +98,21 @@ public class Parser extends RecursiveTask<Parser.ParseResults> {
       parseResults.parseResultsMap
           .put(parser.parseResults.URL, joinParseResults);
     }
+
     return parseResults;
   }
 
-  class ParseResults {
+  public ParseResults getParseResults() {
+    return parseResults;
+  }
+
+  public class ParseResults {
 
     private final String URL;
     private final HashSet<String> urlsSet = new HashSet<>();
     private final Map<String, ParseResults> parseResultsMap = new HashMap<>();
 
-    ParseResults(String url) {
+    private ParseResults(String url) {
       URL = url;
     }
 
@@ -105,9 +121,6 @@ public class Parser extends RecursiveTask<Parser.ParseResults> {
     }
 
     public StringBuilder toStringBuilder(StringBuilder stringBuilder, int i) {
-      if (urlsSet.isEmpty()) {
-        return stringBuilder;
-      }
       if (i == 0) {
         stringBuilder.append(URL);
       }
@@ -126,6 +139,10 @@ public class Parser extends RecursiveTask<Parser.ParseResults> {
         }
       }
       return stringBuilder;
+    }
+
+    public Map<String, ParseResults> getParseResultsMap() {
+      return parseResultsMap;
     }
   }
 }

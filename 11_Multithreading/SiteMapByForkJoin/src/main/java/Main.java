@@ -6,6 +6,7 @@ import java.util.Scanner;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.RecursiveTask;
 import lombok.extern.log4j.Log4j2;
+import parser.Parser;
 
 @Log4j2
 public class Main {
