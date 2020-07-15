@@ -2,6 +2,7 @@ package utils;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinPool;
+import parser.ParseResults;
 import parser.Parser;
 
 public class MainFormService {
@@ -38,7 +39,7 @@ public class MainFormService {
   }
 
   public Integer getParsedLinksCount() {
-    return Parser.getAlreadyParsed().size();
+    return ParseResults.getAlreadyParsed().size();
   }
 }
 

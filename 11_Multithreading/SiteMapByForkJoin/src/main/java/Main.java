@@ -6,6 +6,7 @@ import java.util.Scanner;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.RecursiveTask;
 import lombok.extern.log4j.Log4j2;
+import parser.ParseResults;
 import parser.Parser;
 
 @Log4j2
@@ -29,9 +30,9 @@ public class Main {
         ForkJoinPool fjp = new ForkJoinPool();
         enteredUrl = "https://" + enteredUrl;
 
-        RecursiveTask<Parser.ParseResults> recursiveTask = Parser
+        RecursiveTask<ParseResults> recursiveTask = Parser
             .getInstance(enteredUrl);
-        Parser.ParseResults parseResults = fjp.invoke(recursiveTask);
+        ParseResults parseResults = fjp.invoke(recursiveTask);
         if (parseResults.isEmpty()) {
           continue;
         }
@@ -54,7 +55,7 @@ public class Main {
     }
   }
 
-  private static void printTextFile(Parser.ParseResults object, String filePath)
+  private static void printTextFile(ParseResults object, String filePath)
       throws IOException {
     StringBuilder stringBuilder = object
         .toStringBuilder(new StringBuilder(), 0);
