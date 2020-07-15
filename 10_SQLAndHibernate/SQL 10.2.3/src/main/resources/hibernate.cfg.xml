@@ -2,31 +2,27 @@
   "-//Hibernate/Hibernate Configuration DTD 3.0//EN"
   "http://www.hibernate.org/dtd/hibernate-configuration-3.0.dtd">
 <hibernate-configuration>
-
   <session-factory>
     <!-- JDBC Database connection settings -->
-    <mapping class="model.Courses"/>
-    <mapping class="model.Students"/>
-    <mapping class="model.Teachers"/>
-    <mapping class="model.Subscriptions"/>
-    <!-- JDBC connection pool settings ... using built-in test pool -->
-    <mapping class="model.PurchaseList"/>
-    <!-- Select our SQL dialect -->
-    <mapping class="model.LinkedPurchaseList"/>
-    <!-- Set the current session context -->
     <property name="connection.driver_class">com.mysql.cj.jdbc.Driver</property>
-    <!-- Drop and re-create the database schema on startup -->
-    <property name="connection.url">
-      jdbc:mysql://localhost:3306/skillbox?useSSL=false
-    </property>
-
+    <mapping class="model.Courses"/>
     <property name="connection.username">root</property>
-
-    <property name="connection.password">test</property>
+    <mapping class="model.Students"/>
+    <!-- JDBC connection pool settings ... using built-in test pool -->
     <property name="connection.pool_size">10</property>
+    <!-- Select our SQL dialect -->
     <property name="dialect">org.hibernate.dialect.MySQL5Dialect</property>
+    <!-- Set the current session context -->
     <property name="current_session_context_class">thread</property>
     <property name="hbm2ddl.auto">update</property>
     <property name="hibernate.generate_statistics">true</property>
+    <mapping class="model.Teachers"/>
+    <mapping class="model.Subscriptions"/>
+    <mapping class="model.PurchaseList"/>
+    <mapping class="model.LinkedPurchaseList"/>
+    <property name="connection.url">
+      jdbc:mysql://localhost:3306/skillbox?useSSL=false&amp;serverTimezone=UTC
+    </property>
+    <property name="connection.password">1234567u</property>
   </session-factory>
 </hibernate-configuration>
