@@ -5,25 +5,28 @@ import java.util.concurrent.ForkJoinPool;
 import parser.ParseResults;
 import parser.Parser;
 
-public class MainFormService {
+public class ParserService {
 
-  private static MainFormService mainFormService;
-  private final ForkJoinPool forkJoinPool;
+  private static ParserService parserService;
+  private ForkJoinPool forkJoinPool;
   private Parser parser;
 
-  private MainFormService() {
+  private ParserService() {
     forkJoinPool = (ForkJoinPool) Executors.newWorkStealingPool();
   }
 
-  public static MainFormService getInstance() {
-    if (mainFormService == null) {
-      mainFormService = new MainFormService();
+  public static ParserService getInstance() {
+    if (parserService == null) {
+      parserService = new ParserService();
     }
-    return mainFormService;
+    return parserService;
   }
 
   public void runParser(String inputUrl) {
     parser = Parser.getInstance(inputUrl);
+    if (forkJoinPool.isShutdown()) {
+      forkJoinPool = (ForkJoinPool) Executors.newWorkStealingPool();
+    }
     forkJoinPool.submit(parser);
   }
 
@@ -34,8 +37,6 @@ public class MainFormService {
   public String getResults() {
     return parser.getParseResults().toStringBuilder(new StringBuilder(), 0)
         .toString();
-//    return new GsonBuilder().setPrettyPrinting().create()
-//        .toJson(parser.getParseResults());
   }
 
   public Integer getParsedLinksCount() {

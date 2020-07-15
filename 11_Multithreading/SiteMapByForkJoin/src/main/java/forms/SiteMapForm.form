@@ -88,7 +88,7 @@
           </grid>
         </constraints>
         <properties>
-          <horizontalScrollBarPolicy value="31"/>
+          <horizontalScrollBarPolicy value="30"/>
         </properties>
         <border type="none"/>
         <children>

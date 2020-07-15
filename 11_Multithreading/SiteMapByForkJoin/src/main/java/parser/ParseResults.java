@@ -1,22 +1,23 @@
 package parser;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class ParseResults {
 
   private static final Set<String> alreadyParsed = Collections
       .synchronizedSet(new HashSet<>());
+  private static final Map<String, ParseResults> allParseResults =
+      new ConcurrentHashMap<>();
   private final String url;
   private final HashSet<String> urlsSet = new HashSet<>();
-  private final Map<String, ParseResults> parseResultsMap = new HashMap<>();
 
   ParseResults(String url) {
     this.url = url;
+    allParseResults.put(url, this);
   }
 
   public static Set<String> getAlreadyParsed() {
@@ -24,22 +25,25 @@ public class ParseResults {
   }
 
   public boolean isEmpty() {
-    return parseResultsMap.isEmpty() && urlsSet.isEmpty();
+    return urlsSet.isEmpty();
+  }
+
+  public String getUrl() {
+    return url;
   }
 
   public StringBuilder toStringBuilder(StringBuilder stringBuilder, int i) {
     if (i == 0) {
       stringBuilder.append(url);
     }
-    Iterator<String> iterator = urlsSet.iterator();
-    while (iterator.hasNext()) {
-      String urlKey = iterator.next();
-      stringBuilder.append("\r\n");
-      for (int j = 0; j <= i; j++) {
-        stringBuilder.append("\t");
+    for (String urlKey : urlsSet) {
+      if (stringBuilder.indexOf(urlKey) >= 0) {
+        continue;
       }
+      stringBuilder.append("\r\n");
+      stringBuilder.append("\t".repeat(i + 1));
       stringBuilder.append(urlKey);
-      ParseResults parseResults = parseResultsMap.get(urlKey);
+      ParseResults parseResults = allParseResults.get(urlKey);
       if (parseResults != null) {
         int count = i;
         parseResults.toStringBuilder(stringBuilder, ++count);
@@ -48,15 +52,7 @@ public class ParseResults {
     return stringBuilder;
   }
 
-  public Map<String, ParseResults> getParseResultsMap() {
-    return parseResultsMap;
-  }
-
-  public String getUrl() {
-    return url;
-  }
-
-  public HashSet<String> getUrlsSet() {
+  public Set<String> getUrlsSet() {
     return urlsSet;
   }
 }

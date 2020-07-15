@@ -33,6 +33,17 @@ public class Parser extends RecursiveTask<ParseResults> {
   protected ParseResults compute() {
     try {
       getUrlsFromDocument(getDocumentFromCurrentUrl());
+      if (parseResults.getUrlsSet().isEmpty()) {
+        return parseResults;
+      }
+      ArrayList<Parser> parsers = new ArrayList<>();
+      for (String str : parseResults.getUrlsSet()) {
+        if (ParseResults.getAlreadyParsed().add(str)) {
+          parsers.add(new Parser(str));
+        }
+      }
+      invokeAll(parsers);
+      return parseResults;
     } catch (IOException e) {
       log.error(e);
       return parseResults;
@@ -41,33 +52,6 @@ public class Parser extends RecursiveTask<ParseResults> {
       Thread.currentThread().interrupt();
       return parseResults;
     }
-
-    ArrayList<Parser> parsers = new ArrayList<>();
-
-    if (!parseResults.getUrlsSet().isEmpty()) {
-      for (String str : parseResults.getUrlsSet()) {
-        if (ParseResults.getAlreadyParsed().add(str)) {
-          parsers.add(new Parser(str));
-        }
-      }
-    } else {
-      return parseResults;
-    }
-
-    for (Parser parser : parsers) {
-      parser.fork();
-    }
-
-    for (Parser parser : parsers) {
-      ParseResults joinParseResults = parser.join();
-      if (joinParseResults.isEmpty()) {
-        continue;
-      }
-      parseResults.getParseResultsMap()
-          .put(parser.parseResults.getUrl(), joinParseResults);
-    }
-
-    return parseResults;
   }
 
   private Document getDocumentFromCurrentUrl() throws IOException,
