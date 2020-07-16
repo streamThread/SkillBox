@@ -14,12 +14,12 @@ import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import lombok.SneakyThrows;
-import lombok.extern.log4j.Log4j2;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
-@Log4j2
 public class Bank {
 
-
+  private static final Logger log = LogManager.getFormatterLogger(Bank.class);
   private final BigDecimal MINIMUM_AMOUNT_TO_SEND_FOR_VERIFICATION = new BigDecimal(
       50000);
   private final Random RANDOM = new Random();
@@ -80,8 +80,8 @@ public class Bank {
     Transaction transaction = new Transaction(from, to, amount);
     if (amount.compareTo(MINIMUM_AMOUNT_TO_SEND_FOR_VERIFICATION) < 0) {
       transferService.transactions.put(transaction);
-      log.debug(String.format("%s sent to Transfer_Service",
-          transaction.toString()));
+      log.debug("%s sent to Transfer_Service",
+          transaction::toString);
       return TransferStatus.COMMITED;
     }
     from.setBlocked(true);
@@ -143,20 +143,25 @@ public class Bank {
             continue;
           }
         } catch (InterruptedException e) {
-          Account.SyncAccs syncAccs = new Account.SyncAccs(from, to);
-          synchronized (syncAccs.syncAcc1) {
-            synchronized (syncAccs.syncAcc2) {
-              from.setBlocked(false);
-              to.setBlocked(false);
-            }
-          }
+          unblockAccounts(from, to);
           log.error("SecurityService isFraud error", e);
           break;
         }
+        unblockAccounts(from, to);
         transferService.transactions.putFirst(transaction);
-        log.debug(String.format(
+        log.debug(
             "%s was approved by Security_Service and sent to Transfer_Service",
-            transaction.toString()));
+            transaction::toString);
+      }
+    }
+
+    private void unblockAccounts(Account from, Account to) {
+      Account.SyncAccs syncAccs = new Account.SyncAccs(from, to);
+      synchronized (syncAccs.syncAcc1) {
+        synchronized (syncAccs.syncAcc2) {
+          from.setBlocked(false);
+          to.setBlocked(false);
+        }
       }
     }
   }
@@ -186,8 +191,9 @@ public class Bank {
             to.addMoney(amount);
           }
         }
-        log.info(String.format("Money sent from %s to %s: %.2f у.е.",
-            from.getAcc_number(), to.getAcc_number(), amount.doubleValue()));
+        log.info("Money sent from %s to %s: %.2f у.е.",
+            from::getAcc_number, to::getAcc_number,
+            amount::doubleValue);
       }
     }
   }

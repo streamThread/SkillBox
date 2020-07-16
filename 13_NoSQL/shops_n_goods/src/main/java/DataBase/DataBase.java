@@ -23,12 +23,14 @@ import com.mongodb.client.model.Indexes;
 import com.mongodb.client.model.InsertOneOptions;
 import com.mongodb.client.model.Sorts;
 import java.util.HashSet;
-import lombok.extern.log4j.Log4j2;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.bson.Document;
 
-@Log4j2
 public class DataBase {
 
+  private static final Logger log =
+      LogManager.getFormatterLogger(DataBase.class);
   private static final MongoDatabase DATABASE = MongoConnect.initDB();
 
   public DataBase() {
@@ -51,7 +53,7 @@ public class DataBase {
           "Магазин с таким названием уже существует в базе. Магазин не добавлен");
       return;
     }
-    log.info(String.format("Магазин %s добавлен в базу данных", inputArray[1]));
+    log.info("Магазин %s добавлен в базу данных", inputArray[1]);
   }
 
   public void addGoods(String input) {
@@ -64,7 +66,7 @@ public class DataBase {
           "Товар с таким наименованием уже существует в базе. Товар не добавлен");
       return;
     }
-    log.info(String.format("Товар %s добавлен в базу данных", inputArray[1]));
+    log.info("Товар %s добавлен в базу данных", inputArray[1]);
   }
 
   public void submitGoods(String input) {
@@ -74,14 +76,14 @@ public class DataBase {
         .find(Filters.eq("name", inputArray[1])).first();
     if (good == null) {
       log.info(
-          String.format("Товар %s не найден в базе данных", inputArray[1]));
+          "Товар %s не найден в базе данных", inputArray[1]);
       fail = true;
     }
     Shop shop = DATABASE.getCollection("shop", Shop.class)
         .find(Filters.eq("name", inputArray[2])).first();
     if (shop == null) {
       log.info(
-          String.format("Магазин %s не найден в базе данных", inputArray[2]));
+          "Магазин %s не найден в базе данных", inputArray[2]);
       fail = true;
     }
     if (fail) {
@@ -90,9 +92,8 @@ public class DataBase {
     DATABASE.getCollection("shop").findOneAndUpdate(
         Filters.eq("name", inputArray[2]),
         addToSet("goodsSet", good.getName()));
-    log.info(String
-        .format("Товар %s выставлен на витрину в магазине %s", inputArray[1],
-            inputArray[2]));
+    log.info("Товар %s выставлен на витрину в магазине %s", inputArray[1],
+        inputArray[2]);
   }
 
   public void printStat() {

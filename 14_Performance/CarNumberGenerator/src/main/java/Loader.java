@@ -7,11 +7,12 @@ import java.util.Comparator;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import lombok.extern.log4j.Log4j2;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
-@Log4j2
 public class Loader {
 
+  private static final Logger log = LogManager.getFormatterLogger(Loader.class);
   private static final Path DEST_DIR = Path.of("result");
 
   public static void main(String[] args) throws Exception {
@@ -38,6 +39,6 @@ public class Loader {
     service.shutdown();
     service.awaitTermination(1L, TimeUnit.DAYS);
 
-    log.info((System.currentTimeMillis() - start) + " ms");
+    log.info("%d ms", () -> System.currentTimeMillis() - start);
   }
 }
