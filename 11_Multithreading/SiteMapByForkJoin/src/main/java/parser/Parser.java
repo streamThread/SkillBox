@@ -14,6 +14,7 @@ public class Parser extends RecursiveTask<ParseResults> {
 
   private static String mainUrl;
   private final ParseResults parseResults;
+  private static final String UNNECESSARY_EXTENSION = ".+\\.(jpg|pdf|png)";
 
   private Parser(String url) {
     parseResults = new ParseResults(url);
@@ -32,7 +33,7 @@ public class Parser extends RecursiveTask<ParseResults> {
   @Override
   protected ParseResults compute() {
     try {
-      getUrlsFromDocument(getDocumentFromCurrentUrl());
+      getUrlsFromDocumentToParseResultUrlsSet(getDocumentFromCurrentUrl());
       if (parseResults.getUrlsSet().isEmpty()) {
         return parseResults;
       }
@@ -56,16 +57,14 @@ public class Parser extends RecursiveTask<ParseResults> {
 
   private Document getDocumentFromCurrentUrl() throws IOException,
       InterruptedException {
-    Thread.sleep(new Random().nextInt(100) + 100);
+    Thread.sleep(100L + new Random().nextInt(100));
     return Jsoup.connect(parseResults.getUrl()).maxBodySize(0).get();
   }
 
-  private void getUrlsFromDocument(Document document) {
+  private void getUrlsFromDocumentToParseResultUrlsSet(Document document) {
     for (Element e : document.select("a[href]")) {
       String absUrl = e.absUrl("href");
-      if (absUrl.endsWith(".jpg") || absUrl.endsWith(".pdf") || absUrl
-          .contains("#")
-          || absUrl.endsWith(".png")) {
+      if (absUrl.matches(UNNECESSARY_EXTENSION) || absUrl.contains("#")) {
         continue;
       }
       if (!absUrl.endsWith("/")) {

@@ -1,12 +1,13 @@
 package parser;
 
+import java.io.Serializable;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class ParseResults {
+public class ParseResults implements Serializable {
 
   private static final Set<String> alreadyParsed = Collections
       .synchronizedSet(new HashSet<>());
@@ -20,16 +21,20 @@ public class ParseResults {
     allParseResults.put(url, this);
   }
 
-  public static Set<String> getAlreadyParsed() {
-    return alreadyParsed;
-  }
-
   public boolean isEmpty() {
     return urlsSet.isEmpty();
   }
 
+  public static Set<String> getAlreadyParsed() {
+    return alreadyParsed;
+  }
+
   public String getUrl() {
     return url;
+  }
+
+  public Set<String> getUrlsSet() {
+    return urlsSet;
   }
 
   public StringBuilder toStringBuilder(StringBuilder stringBuilder, int i) {
@@ -50,9 +55,5 @@ public class ParseResults {
       }
     }
     return stringBuilder;
-  }
-
-  public Set<String> getUrlsSet() {
-    return urlsSet;
   }
 }

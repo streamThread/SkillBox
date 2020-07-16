@@ -1,9 +1,11 @@
 package forms;
 
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.Objects;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
@@ -14,12 +16,12 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SwingWorker;
 import javax.swing.Timer;
-import utils.ParserService;
+import parser.ParserService;
 
 public class SiteMapForm implements MyForm {
 
   private static final String URL_REGEX =
-      "^(https:\\/\\/)?([\\da-z\\.-]+)\\.([a-z]{2,6})\\/?$";
+      "^(https?://)?([\\da-z-.]+)\\.([a-z]{2,6})/?$";
 
   private final MyTimer timer = new MyTimer();
 
@@ -32,33 +34,11 @@ public class SiteMapForm implements MyForm {
   private JLabel lblFoundLinks;
   private JTextField siteURL;
 
-
   public SiteMapForm() {
     btnPause.setIcon(new ImageIcon(Objects
         .requireNonNull(getClass().getClassLoader().getResource("pause.png"))));
-
-    btnGetSitemap.addActionListener(e -> {
-      String inputURL = siteURL.getText();
-      if (inputURL.isEmpty() || !inputURL.matches(URL_REGEX)) {
-        JOptionPane
-            .showMessageDialog(mainPanel,
-                "Пожалуйста введите URL (example.com, https://example.com)",
-                "Ошибка",
-                JOptionPane.ERROR_MESSAGE);
-        return;
-      }
-      if (!inputURL.startsWith("https://")) {
-        inputURL = String.format("https://%s", inputURL);
-      }
-      ParserService.getInstance().runParser(inputURL);
-      timer.startTimers();
-    });
-
-    btnStop.addActionListener(e -> {
-      ParserService.getInstance().stopParser();
-      timer.stopTimers();
-      txtDownloadLog.setText(ParserService.getInstance().getResults());
-    });
+    btnGetSitemap.addActionListener(e -> startParser());
+    btnStop.addActionListener(e -> stopParser());
   }
 
   @Override
@@ -66,13 +46,40 @@ public class SiteMapForm implements MyForm {
     return mainPanel;
   }
 
+  private void startParser() {
+    String inputURL = siteURL.getText();
+    if (inputURL.isEmpty() || !inputURL.matches(URL_REGEX)) {
+      JOptionPane
+          .showMessageDialog(mainPanel,
+              "Пожалуйста введите URL (example.com, http(s)://example.com)",
+              "Ошибка",
+              JOptionPane.ERROR_MESSAGE);
+      return;
+    }
+    new Thread(() -> {
+      try {
+        ParserService.getInstance().runParser(inputURL);
+      } catch (CancellationException ex) {
+      }
+      stopParser();
+    }).start();
+
+    timer.startTimers();
+  }
+
+  private void stopParser() {
+    ParserService.getInstance().stopParser();
+    timer.stopTimers();
+    txtDownloadLog.setText(ParserService.getInstance().getResults());
+  }
+
   private class MyTimer {
 
     private final Timer alreadyParsedTimer;
     private final Timer fromLaunchTimer;
     private final Timer resultTextTimer;
-    private LocalTime start;
-    boolean inProgress;
+    private LocalDateTime start;
+    private SwingWorker<String, Void> worker;
 
 
     MyTimer() {
@@ -85,15 +92,14 @@ public class SiteMapForm implements MyForm {
           e -> lblElapsedTime.setText("Прошло времени с запуска приложения: " +
               LocalTime
                   .ofSecondOfDay(
-                      start.until(LocalTime.now(), ChronoUnit.SECONDS))
+                      start.until(LocalDateTime.now(), ChronoUnit.SECONDS))
                   .format(DateTimeFormatter.ofPattern("mm:ss"))));
 
       resultTextTimer = new Timer(1000, e -> {
-        if (!inProgress) {
-          SwingWorker worker = new SwingWorker<String, Void>() {
+        if (worker == null || worker.isDone()) {
+          worker = new SwingWorker<>() {
             @Override
             protected String doInBackground() {
-              inProgress = true;
               return ParserService.getInstance().getResults();
             }
 
@@ -101,9 +107,9 @@ public class SiteMapForm implements MyForm {
             protected void done() {
               try {
                 txtDownloadLog.setText(get());
-                inProgress = false;
               } catch (InterruptedException interruptedException) {
                 interruptedException.printStackTrace();
+                Thread.currentThread().interrupt();
               } catch (ExecutionException executionException) {
                 executionException.printStackTrace();
               }
@@ -115,7 +121,7 @@ public class SiteMapForm implements MyForm {
     }
 
     private void startTimers() {
-      start = LocalTime.now();
+      start = LocalDateTime.now();
       alreadyParsedTimer.start();
       fromLaunchTimer.start();
       resultTextTimer.start();

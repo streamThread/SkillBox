@@ -1,9 +1,11 @@
-package utils;
+package parser;
 
+import java.io.IOException;
+import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinPool;
-import parser.ParseResults;
-import parser.Parser;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 
 public class ParserService {
 
@@ -23,11 +25,25 @@ public class ParserService {
   }
 
   public void runParser(String inputUrl) {
-    parser = Parser.getInstance(inputUrl);
+    String checkedURL =
+        List.of("https://" + inputUrl, "http://" + inputUrl, inputUrl).stream()
+            .filter(this::pingUrl)
+            .findFirst().orElseThrow(IllegalArgumentException::new);
+    parser = Parser.getInstance(checkedURL);
     if (forkJoinPool.isShutdown()) {
       forkJoinPool = (ForkJoinPool) Executors.newWorkStealingPool();
     }
-    forkJoinPool.submit(parser);
+    forkJoinPool.invoke(parser);
+  }
+
+  private boolean pingUrl(String url) {
+    Document doc;
+    try {
+      doc = Jsoup.connect(url).get();
+    } catch (IOException e) {
+      return false;
+    }
+    return doc != null;
   }
 
   public void stopParser() {
@@ -35,8 +51,8 @@ public class ParserService {
   }
 
   public String getResults() {
-    return parser.getParseResults().toStringBuilder(new StringBuilder(), 0)
-        .toString();
+    return parser != null ? parser.getParseResults()
+        .toStringBuilder(new StringBuilder(), 0).toString() : "";
   }
 
   public Integer getParsedLinksCount() {
