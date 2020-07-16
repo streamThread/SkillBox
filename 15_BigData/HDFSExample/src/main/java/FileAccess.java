@@ -1,4 +1,7 @@
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
@@ -121,5 +124,18 @@ public class FileAccess {
       }
     }
     return filePaths;
+  }
+
+  public void copyFileToHDFS(String pathFrom, String pathTo)
+      throws IOException {
+    Path hdfsPathTo = new Path(pathTo);
+    try (InputStream is = new FileInputStream(pathFrom);
+        OutputStream os = hdfs.create(hdfsPathTo, false)) {
+      byte[] buffer = new byte[1024];
+      int length;
+      while ((length = is.read(buffer)) > 0) {
+        os.write(buffer, 0, length);
+      }
+    }
   }
 }
