@@ -9,19 +9,11 @@ import org.jsoup.nodes.Document;
 
 public class ParserService {
 
-  private static ParserService parserService;
   private ForkJoinPool forkJoinPool;
   private Parser parser;
 
-  private ParserService() {
+  public ParserService() {
     forkJoinPool = (ForkJoinPool) Executors.newWorkStealingPool();
-  }
-
-  public static ParserService getInstance() {
-    if (parserService == null) {
-      parserService = new ParserService();
-    }
-    return parserService;
   }
 
   public void runParser(String inputUrl) {
@@ -53,10 +45,6 @@ public class ParserService {
   public String getResults() {
     return parser != null ? parser.getParseResults()
         .toStringBuilder(new StringBuilder(), 0).toString() : "";
-  }
-
-  public Integer getParsedLinksCount() {
-    return ParseResults.getAlreadyParsed().size();
   }
 }
 

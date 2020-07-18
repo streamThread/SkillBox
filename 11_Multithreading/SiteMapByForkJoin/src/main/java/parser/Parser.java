@@ -15,6 +15,7 @@ public class Parser extends RecursiveTask<ParseResults> {
   private static String mainUrl;
   private final ParseResults parseResults;
   private static final String UNNECESSARY_EXTENSION = ".+\\.(jpg|pdf|png)";
+  private static final byte DELAY = 100;
 
   private Parser(String url) {
     parseResults = new ParseResults(url);
@@ -25,8 +26,7 @@ public class Parser extends RecursiveTask<ParseResults> {
       url += "/";
     }
     mainUrl = url;
-    ParseResults.getAlreadyParsed().clear();
-    ParseResults.getAlreadyParsed().add(url);
+    ParseResults.getAllParseResults().clear();
     return new Parser(url);
   }
 
@@ -38,18 +38,21 @@ public class Parser extends RecursiveTask<ParseResults> {
         return parseResults;
       }
       ArrayList<Parser> parsers = new ArrayList<>();
-      for (String str : parseResults.getUrlsSet()) {
-        if (ParseResults.getAlreadyParsed().add(str)) {
-          parsers.add(new Parser(str));
+      synchronized (parseResults.getUrlsSet()) {
+        for (String str : parseResults.getUrlsSet()) {
+          synchronized (ParseResults.getAllParseResults()) {
+            if (!ParseResults.getAllParseResults().containsKey(str)) {
+              parsers.add(new Parser(str));
+            }
+          }
         }
       }
       invokeAll(parsers);
       return parseResults;
     } catch (IOException e) {
-      log.error(e);
+      log.error("", e);
       return parseResults;
     } catch (InterruptedException e) {
-      log.error(e);
       Thread.currentThread().interrupt();
       return parseResults;
     }
@@ -57,7 +60,7 @@ public class Parser extends RecursiveTask<ParseResults> {
 
   private Document getDocumentFromCurrentUrl() throws IOException,
       InterruptedException {
-    Thread.sleep(100L + new Random().nextInt(100));
+    Thread.sleep((long) DELAY + new Random().nextInt(DELAY));
     return Jsoup.connect(parseResults.getUrl()).maxBodySize(0).get();
   }
 

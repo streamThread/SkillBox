@@ -56,6 +56,12 @@
       <groupId>com.google.code.gson</groupId>
       <version>2.8.6</version>
     </dependency>
+    <dependency>
+      <artifactId>commons-lang3</artifactId>
+      <groupId>org.apache.commons</groupId>
+      <scope>compile</scope>
+      <version>3.10</version>
+    </dependency>
   </dependencies>
   <modelVersion>4.0.0</modelVersion>
   <parent>

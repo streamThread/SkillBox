@@ -6,15 +6,15 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import org.apache.commons.lang3.StringUtils;
 
 public class ParseResults implements Serializable {
 
-  private static final Set<String> alreadyParsed = Collections
-      .synchronizedSet(new HashSet<>());
   private static final Map<String, ParseResults> allParseResults =
       new ConcurrentHashMap<>();
   private final String url;
-  private final HashSet<String> urlsSet = new HashSet<>();
+  private final Set<String> urlsSet = Collections
+      .synchronizedSet(new HashSet<>());
 
   ParseResults(String url) {
     this.url = url;
@@ -25,10 +25,6 @@ public class ParseResults implements Serializable {
     return urlsSet.isEmpty();
   }
 
-  public static Set<String> getAlreadyParsed() {
-    return alreadyParsed;
-  }
-
   public String getUrl() {
     return url;
   }
@@ -37,21 +33,23 @@ public class ParseResults implements Serializable {
     return urlsSet;
   }
 
+  public static Map<String, ParseResults> getAllParseResults() {
+    return allParseResults;
+  }
+
   public StringBuilder toStringBuilder(StringBuilder stringBuilder, int i) {
     if (i == 0) {
       stringBuilder.append(url);
     }
-    for (String urlKey : urlsSet) {
-      if (stringBuilder.indexOf(urlKey) >= 0) {
-        continue;
-      }
-      stringBuilder.append("\r\n");
-      stringBuilder.append("\t".repeat(i + 1));
-      stringBuilder.append(urlKey);
-      ParseResults parseResults = allParseResults.get(urlKey);
-      if (parseResults != null) {
-        int count = i;
-        parseResults.toStringBuilder(stringBuilder, ++count);
+    synchronized (urlsSet) {
+      for (String urlKey : urlsSet) {
+        stringBuilder.append("\r\n").append("\t".repeat(i + 1)).append(urlKey);
+        if (StringUtils.countMatches(stringBuilder.toString(), urlKey) == 1) {
+          ParseResults parseResults = allParseResults.get(urlKey);
+          if (parseResults != null) {
+            parseResults.toStringBuilder(stringBuilder, i + 1);
+          }
+        }
       }
     }
     return stringBuilder;
