@@ -17,7 +17,7 @@ public class Parser extends RecursiveTask<ParseResults> {
   private static final String UNNECESSARY_EXTENSION = ".+\\.(jpg|pdf|png)";
   private static final byte DELAY = 100;
 
-  private Parser(String url) {
+  Parser(String url) {
     parseResults = new ParseResults(url);
   }
 

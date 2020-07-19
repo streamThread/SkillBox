@@ -33,6 +33,7 @@ public class SiteMapForm implements MyForm {
                 getClass().getClassLoader().getResource(PAUSE_BUTTON_ICON))));
     btnGetSitemap.addActionListener(e -> mainService.startParsing());
     btnStop.addActionListener(e -> mainService.stopParsing());
+    btnPause.addActionListener(e -> mainService.doPauseOrResume());
   }
 
   @Override

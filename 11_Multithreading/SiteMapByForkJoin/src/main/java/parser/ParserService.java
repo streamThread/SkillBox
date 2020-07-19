@@ -42,6 +42,15 @@ public class ParserService {
     forkJoinPool.shutdownNow();
   }
 
+  public void resumeParser() {
+    forkJoinPool = (ForkJoinPool) Executors.newWorkStealingPool();
+    ParseResults.getAllParseResults().values().parallelStream()
+        .filter(parseResults -> parseResults.getUrlsSet().isEmpty())
+        .map(ParseResults::getUrl)
+        .map(url -> new Parser(url))
+        .forEach(newParser -> forkJoinPool.submit(newParser));
+  }
+
   public String getResults() {
     return parser != null ? parser.getParseResults()
         .toStringBuilder(new StringBuilder(), 0).toString() : "";

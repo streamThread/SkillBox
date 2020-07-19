@@ -13,8 +13,8 @@ public class ParseResults implements Serializable {
   private static final Map<String, ParseResults> allParseResults =
       new ConcurrentHashMap<>();
   private final String url;
-  private final Set<String> urlsSet = Collections
-      .synchronizedSet(new HashSet<>());
+  private final Set<String> urlsSet =
+      Collections.synchronizedSet(new HashSet<>());
 
   ParseResults(String url) {
     this.url = url;

@@ -8,6 +8,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import javax.swing.JOptionPane;
+import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
 import javax.swing.Timer;
 import lombok.extern.log4j.Log4j2;
@@ -22,8 +23,10 @@ public class MainService {
   private static final String URL_REGEX =
       "^(https?://)?([\\da-z-.]+)\\.([a-z]{2,6})/?$";
   private static final int TIMER_DELAY = 1000;
-  private static final String DONE_ERROR = "setTextWithParseResults (done "
-      + "method) error: ";
+  private static final String DONE_ERROR =
+      "setTextWithParseResults (done method) error: ";
+
+  private boolean isPaused;
 
   private final SiteMapForm siteMapForm;
   private final SiteMapFormTimer timer = new SiteMapFormTimer();
@@ -47,11 +50,7 @@ public class MainService {
 
   private boolean checkInput(String inputURL) {
     if (inputURL.isEmpty() || !inputURL.matches(URL_REGEX)) {
-      JOptionPane
-          .showMessageDialog(siteMapForm.getMainPanel(),
-              "Пожалуйста введите URL (example.com, http(s)://example.com)",
-              "Ошибка",
-              JOptionPane.ERROR_MESSAGE);
+      showErrorMessage();
       return false;
     }
     return true;
@@ -63,24 +62,74 @@ public class MainService {
         //invoke parser and wait until parser work done
         parserService.runParser(inputURL);
       } catch (CancellationException ex) {
-        JOptionPane
-            .showMessageDialog(siteMapForm.getMainPanel(),
-                "Парсинг успешно остановлен",
-                "Сохраняем результаты в файл",
-                JOptionPane.INFORMATION_MESSAGE);
         return;
       }
       stopParsing();  //and then stop
     }).start();
   }
 
-  public void stopParsing() {
+  public void doPauseOrResume() {
+    if (isPaused) {
+      resumeParsing();
+    } else {
+      pauseParsing();
+    }
+  }
+
+  private void pauseParsing() {
+    isPaused = true;
+    showPauseMessage();
     parserService.stopParser();
-    String resultUrlsStr = timer.stopTimers();
+    timer.stopTimers();
+    timer.pause = LocalDateTime.now();
+  }
+
+  private void resumeParsing() {
+    parserService.resumeParser();
+    timer.start = LocalDateTime.now().minus(
+        timer.start.until(timer.pause,
+            ChronoUnit.SECONDS), ChronoUnit.SECONDS);
+    timer.startTimers();
+    isPaused = false;
+  }
+
+  public void stopParsing() {
+    showStopMessage();
+    if (!isPaused) {
+      parserService.stopParser();
+      timer.stopTimers();
+    }
     textFileWriter
-        .saveResults(siteMapForm.getSiteURL().getText(), resultUrlsStr);
+        .saveResults(siteMapForm.getSiteURL().getText(),
+            siteMapForm.getTxtDownloadLog().getText());
     siteMapForm.getBtnGetSitemap().setEnabled(true);
     siteMapForm.getSiteURL().setEnabled(true);
+    isPaused = false;
+  }
+
+  private void showStopMessage() {
+    SwingUtilities.invokeLater(() -> JOptionPane
+        .showMessageDialog(siteMapForm.getMainPanel(),
+            "Парсинг успешно завершен",
+            "Сохраняем результаты в файл",
+            JOptionPane.INFORMATION_MESSAGE));
+  }
+
+  private void showPauseMessage() {
+    SwingUtilities.invokeLater(() -> JOptionPane
+        .showMessageDialog(siteMapForm.getMainPanel(),
+            "Парсинг приостановлен. "
+                + "Для возобновления нажмите на ▶",
+            "Пауза",
+            JOptionPane.INFORMATION_MESSAGE));
+  }
+
+  private void showErrorMessage() {
+    SwingUtilities.invokeLater(() -> JOptionPane
+        .showMessageDialog(siteMapForm.getMainPanel(),
+            "Пожалуйста введите URL (example.com, http(s)://example.com)",
+            "Ошибка",
+            JOptionPane.ERROR_MESSAGE));
   }
 
   private class SiteMapFormTimer {
@@ -88,6 +137,7 @@ public class MainService {
     private final Timer fromLaunchTimer;
     private final Timer resultTextTimer;
     private LocalDateTime start;
+    private LocalDateTime pause;
     private SwingWorker<Pair<String, Long>, Void> worker;
 
     SiteMapFormTimer() {
@@ -97,7 +147,7 @@ public class MainService {
 
     private void setFromLaunchTime() {
       siteMapForm.getLblElapsedTime().setText("Прошло времени с запуска "
-          + "приложения: " +
+          + "парсера: " +
           LocalTime
               .ofSecondOfDay(
                   start.until(LocalDateTime.now(), ChronoUnit.SECONDS))
@@ -105,32 +155,30 @@ public class MainService {
     }
 
     private void setTextWithParseResults() {
-      if (worker == null || worker.isDone()) {
-
-        worker = new SwingWorker<>() {
-          @Override
-          protected Pair<String, Long> doInBackground() {
-            String resultStr = parserService.getResults();
-            Long resultsCount = resultStr.lines().count();
-            return new ImmutablePair<>(resultStr, resultsCount);
-          }
-
-          @Override
-          protected void done() {
-            try {
-              setFoundLinksText(get().getLeft(), get().getRight());
-            } catch (InterruptedException interruptedException) {
-              log.error(DONE_ERROR,
-                  interruptedException);
-              Thread.currentThread().interrupt();
-            } catch (ExecutionException executionException) {
-              log.error(DONE_ERROR,
-                  executionException);
-            }
-          }
-        };
-        worker.execute();
+      if (worker != null && !worker.isDone()) {
+        return;
       }
+      worker = new SwingWorker<>() {
+        @Override
+        protected Pair<String, Long> doInBackground() {
+          String resultStr = parserService.getResults();
+          Long resultsCount = resultStr.lines().count();
+          return new ImmutablePair<>(resultStr, resultsCount);
+        }
+
+        @Override
+        protected void done() {
+          try {
+            setFoundLinksText(get().getLeft(), get().getRight());
+          } catch (InterruptedException interruptedException) {
+            log.error(DONE_ERROR, interruptedException);
+            Thread.currentThread().interrupt();
+          } catch (ExecutionException executionException) {
+            log.error(DONE_ERROR, executionException);
+          }
+        }
+      };
+      worker.execute();
     }
 
     private void setFoundLinksText(String results, Long resultCount) {
@@ -140,19 +188,18 @@ public class MainService {
     }
 
     private void startTimers() {
-      start = LocalDateTime.now();
+      if (!isPaused) {
+        start = LocalDateTime.now();
+      }
       fromLaunchTimer.start();
       resultTextTimer.start();
     }
 
-    private String stopTimers() {
+    private void stopTimers() {
       fromLaunchTimer.stop();
       resultTextTimer.stop();
+      setTextWithParseResults();
       setFromLaunchTime();
-      String resultUrlsStr = parserService.getResults();
-      Long urlsCount = resultUrlsStr.lines().count();
-      setFoundLinksText(resultUrlsStr, urlsCount);
-      return resultUrlsStr;
     }
   }
 }
