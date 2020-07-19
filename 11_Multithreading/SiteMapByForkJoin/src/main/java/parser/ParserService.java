@@ -9,6 +9,7 @@ import org.jsoup.nodes.Document;
 
 public class ParserService {
 
+  private static final int CACHE_SIZE = Integer.MAX_VALUE / 2;
   private ForkJoinPool forkJoinPool;
   private Parser parser;
 
@@ -51,9 +52,39 @@ public class ParserService {
         .forEach(newParser -> forkJoinPool.submit(newParser));
   }
 
-  public String getResults() {
+  public String getFirstFewFoundLinks(int countOfFew) {
+    synchronized (Parser.getFoundUrlsCache()) {
+      int urlsCountInCache = Parser.getFoundUrlsCache().size();
+      String result = String.join("\r\n", Parser.getFoundUrlsCache()
+          //берем на выдачу последние countOfFew записей
+          .subList(
+              urlsCountInCache > countOfFew ? urlsCountInCache - countOfFew - 1
+                  : 0,
+              urlsCountInCache == 0 ? urlsCountInCache : urlsCountInCache - 1));
+      if (urlsCountInCache > CACHE_SIZE) {
+        //чистим кэш
+        Parser.getFoundUrlsCache()
+            .subList(0, urlsCountInCache - (countOfFew * 2)).clear();
+      }
+      return result;
+    }
+  }
+
+  public long getFoundLinksCount() {
+    return ParseResults.getAllParseResults().values().stream()
+        .mapToLong(parseResults -> {
+          synchronized (parseResults.getUrlsSet()) {
+            return parseResults.getUrlsSet().size();
+          }
+        })
+        .sum();
+  }
+
+  public String getResultString() {
     return parser != null ? parser.getParseResults()
         .toStringBuilder(new StringBuilder(), 0).toString() : "";
   }
 }
+
+
 

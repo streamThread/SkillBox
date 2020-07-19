@@ -12,8 +12,6 @@ import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
 import javax.swing.Timer;
 import lombok.extern.log4j.Log4j2;
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.Pair;
 import parser.ParserService;
 import utils.TextFileWriter;
 
@@ -86,9 +84,6 @@ public class MainService {
 
   private void resumeParsing() {
     parserService.resumeParser();
-    timer.start = LocalDateTime.now().minus(
-        timer.start.until(timer.pause,
-            ChronoUnit.SECONDS), ChronoUnit.SECONDS);
     timer.startTimers();
     isPaused = false;
   }
@@ -101,7 +96,7 @@ public class MainService {
     }
     textFileWriter
         .saveResults(siteMapForm.getSiteURL().getText(),
-            siteMapForm.getTxtDownloadLog().getText());
+            parserService.getResultString());
     siteMapForm.getBtnGetSitemap().setEnabled(true);
     siteMapForm.getSiteURL().setEnabled(true);
     isPaused = false;
@@ -136,13 +131,15 @@ public class MainService {
 
     private final Timer fromLaunchTimer;
     private final Timer resultTextTimer;
+    private final Timer resultsCountTimer;
     private LocalDateTime start;
     private LocalDateTime pause;
-    private SwingWorker<Pair<String, Long>, Void> worker;
+    private SwingWorker<Long, Void> foundUrlsCountWorker;
 
     SiteMapFormTimer() {
       fromLaunchTimer = new Timer(TIMER_DELAY, e -> setFromLaunchTime());
-      resultTextTimer = new Timer(TIMER_DELAY, e -> setTextWithParseResults());
+      resultTextTimer = new Timer(0, e -> setTextWithParseResults());
+      resultsCountTimer = new Timer(TIMER_DELAY, e -> setFoundUrlsCount());
     }
 
     private void setFromLaunchTime() {
@@ -154,22 +151,21 @@ public class MainService {
               .format(DateTimeFormatter.ofPattern("mm:ss")));
     }
 
-    private void setTextWithParseResults() {
-      if (worker != null && !worker.isDone()) {
+    private void setFoundUrlsCount() {
+      if (foundUrlsCountWorker != null && !foundUrlsCountWorker.isDone()) {
         return;
       }
-      worker = new SwingWorker<>() {
+      foundUrlsCountWorker = new SwingWorker<>() {
         @Override
-        protected Pair<String, Long> doInBackground() {
-          String resultStr = parserService.getResults();
-          Long resultsCount = resultStr.lines().count();
-          return new ImmutablePair<>(resultStr, resultsCount);
+        protected Long doInBackground() {
+          return parserService.getFoundLinksCount();
         }
 
         @Override
         protected void done() {
           try {
-            setFoundLinksText(get().getLeft(), get().getRight());
+            siteMapForm.getLblFoundLinks()
+                .setText("Найдено ссылок: " + get());
           } catch (InterruptedException interruptedException) {
             log.error(DONE_ERROR, interruptedException);
             Thread.currentThread().interrupt();
@@ -178,28 +174,34 @@ public class MainService {
           }
         }
       };
-      worker.execute();
+      foundUrlsCountWorker.execute();
     }
 
-    private void setFoundLinksText(String results, Long resultCount) {
-      siteMapForm.getTxtDownloadLog().setText(results);
-      siteMapForm.getLblFoundLinks()
-          .setText("Найдено ссылок: " + resultCount);
+    private void setTextWithParseResults() {
+      siteMapForm.getTxtDownloadLog().setText(
+          parserService.getFirstFewFoundLinks(25));
     }
 
     private void startTimers() {
-      if (!isPaused) {
+      if (isPaused) {
+        start = LocalDateTime.now().minus(
+            timer.start.until(timer.pause,
+                ChronoUnit.SECONDS), ChronoUnit.SECONDS);
+      } else {
         start = LocalDateTime.now();
       }
+      resultsCountTimer.start();
       fromLaunchTimer.start();
       resultTextTimer.start();
     }
 
     private void stopTimers() {
+      resultsCountTimer.stop();
       fromLaunchTimer.stop();
       resultTextTimer.stop();
       setTextWithParseResults();
       setFromLaunchTime();
+      setFoundUrlsCount();
     }
   }
 }

@@ -13,16 +13,12 @@ public class ParseResults implements Serializable {
   private static final Map<String, ParseResults> allParseResults =
       new ConcurrentHashMap<>();
   private final String url;
-  private final Set<String> urlsSet =
-      Collections.synchronizedSet(new HashSet<>());
+  private final Set<String> urlsSet;
 
   ParseResults(String url) {
     this.url = url;
     allParseResults.put(url, this);
-  }
-
-  public boolean isEmpty() {
-    return urlsSet.isEmpty();
+    urlsSet = Collections.synchronizedSet(new HashSet<>());
   }
 
   public String getUrl() {
@@ -37,18 +33,18 @@ public class ParseResults implements Serializable {
     return allParseResults;
   }
 
-  public StringBuilder toStringBuilder(StringBuilder stringBuilder, int i) {
-    if (i == 0) {
+  public StringBuilder toStringBuilder(StringBuilder stringBuilder,
+      int deepLevel) {
+    if (deepLevel == 0) {
       stringBuilder.append(url);
     }
     synchronized (urlsSet) {
       for (String urlKey : urlsSet) {
-        stringBuilder.append("\r\n").append("\t".repeat(i + 1)).append(urlKey);
+        stringBuilder.append("\r\n").append("\t".repeat(deepLevel + 1))
+            .append(urlKey);
         if (StringUtils.countMatches(stringBuilder.toString(), urlKey) == 1) {
           ParseResults parseResults = allParseResults.get(urlKey);
-          if (parseResults != null) {
-            parseResults.toStringBuilder(stringBuilder, i + 1);
-          }
+          parseResults.toStringBuilder(stringBuilder, deepLevel + 1);
         }
       }
     }

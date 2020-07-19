@@ -1,7 +1,12 @@
 package parser;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.FormatStyle;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Random;
 import java.util.concurrent.RecursiveTask;
 import lombok.extern.log4j.Log4j2;
@@ -12,9 +17,13 @@ import org.jsoup.nodes.Element;
 @Log4j2
 public class Parser extends RecursiveTask<ParseResults> {
 
+  private static final List<String> foundUrlsCache =
+      Collections.synchronizedList(new ArrayList<>());
+  private static final DateTimeFormatter dtf =
+      DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM);
+  private static final String UNNECESSARY_EXTENSION = ".+\\.(jpg|pdf|png)";
   private static String mainUrl;
   private final ParseResults parseResults;
-  private static final String UNNECESSARY_EXTENSION = ".+\\.(jpg|pdf|png)";
   private static final byte DELAY = 100;
 
   Parser(String url) {
@@ -75,8 +84,14 @@ public class Parser extends RecursiveTask<ParseResults> {
       }
       if (!absUrl.equals(parseResults.getUrl()) && absUrl.startsWith(mainUrl)) {
         parseResults.getUrlsSet().add(absUrl);
+        foundUrlsCache
+            .add("[" + LocalDateTime.now().format(dtf) + "]: " + absUrl);
       }
     }
+  }
+
+  public static List<String> getFoundUrlsCache() {
+    return foundUrlsCache;
   }
 
   public ParseResults getParseResults() {

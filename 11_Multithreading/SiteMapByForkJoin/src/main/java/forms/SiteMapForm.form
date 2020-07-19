@@ -88,7 +88,7 @@
           </grid>
         </constraints>
         <properties>
-          <horizontalScrollBarPolicy value="30"/>
+          <horizontalScrollBarPolicy value="31"/>
         </properties>
         <border type="none"/>
         <children>
@@ -97,6 +97,7 @@
             <properties>
               <editable value="false"/>
               <enabled value="true"/>
+              <lineWrap value="true"/>
             </properties>
           </component>
         </children>
