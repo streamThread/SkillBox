@@ -43,6 +43,8 @@ public class MainService {
     runParserInNewThread(inputURL);
     siteMapForm.getBtnGetSitemap().setEnabled(false);
     siteMapForm.getSiteURL().setEnabled(false);
+    siteMapForm.getBtnPause().setEnabled(true);
+    siteMapForm.getBtnStop().setEnabled(true);
     timer.startTimers();
   }
 
@@ -99,6 +101,8 @@ public class MainService {
             parserService.getResultString());
     siteMapForm.getBtnGetSitemap().setEnabled(true);
     siteMapForm.getSiteURL().setEnabled(true);
+    siteMapForm.getBtnStop().setEnabled(false);
+    siteMapForm.getBtnPause().setEnabled(false);
     isPaused = false;
   }
 
