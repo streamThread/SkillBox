@@ -23,9 +23,7 @@ public class MainService {
   private static final int TIMER_DELAY = 1000;
   private static final String DONE_ERROR =
       "setTextWithParseResults (done method) error: ";
-
   private boolean isPaused;
-
   private final SiteMapForm siteMapForm;
   private final SiteMapFormTimer timer = new SiteMapFormTimer();
   private final ParserService parserService = new ParserService();
@@ -206,6 +204,11 @@ public class MainService {
       setTextWithParseResults();
       setFromLaunchTime();
       setFoundUrlsCount();
+      while (true) {
+        if (foundUrlsCountWorker.isDone()) {
+          break;
+        }
+      }
     }
   }
 }

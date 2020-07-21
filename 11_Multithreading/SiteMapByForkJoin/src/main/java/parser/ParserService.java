@@ -4,9 +4,11 @@ import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinPool;
+import lombok.extern.log4j.Log4j2;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
+@Log4j2
 public class ParserService {
 
   private static final int CACHE_SIZE = Integer.MAX_VALUE / 2;
@@ -41,11 +43,16 @@ public class ParserService {
 
   public void stopParser() {
     forkJoinPool.shutdownNow();
+    while (true) {
+      if (forkJoinPool.isTerminated()) {
+        break;
+      }
+    }
   }
 
   public void resumeParser() {
     forkJoinPool = (ForkJoinPool) Executors.newWorkStealingPool();
-    ParseResults.getAllParseResults().values().parallelStream()
+    Parser.getAllParseResults().values().parallelStream()
         .filter(parseResults -> parseResults.getUrlsSet().isEmpty())
         .map(ParseResults::getUrl)
         .map(url -> new Parser(url))
@@ -71,13 +78,9 @@ public class ParserService {
   }
 
   public long getFoundLinksCount() {
-    return ParseResults.getAllParseResults().values().stream()
-        .mapToLong(parseResults -> {
-          synchronized (parseResults.getUrlsSet()) {
-            return parseResults.getUrlsSet().size();
-          }
-        })
-        .sum();
+    return Parser.getAllParseResults().values().stream()
+        .mapToLong(parseResults -> parseResults.getUrlsSet().size())
+        .sum() + 1;
   }
 
   public String getResultString() {

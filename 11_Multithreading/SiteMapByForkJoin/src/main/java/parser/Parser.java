@@ -7,9 +7,12 @@ import java.time.format.FormatStyle;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.RecursiveTask;
 import lombok.extern.log4j.Log4j2;
+import org.jsoup.HttpStatusException;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -22,12 +25,15 @@ public class Parser extends RecursiveTask<ParseResults> {
   private static final DateTimeFormatter dtf =
       DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM);
   private static final String UNNECESSARY_EXTENSION = ".+\\.(jpg|pdf|png)";
+  private static final Map<String, ParseResults> allParseResults =
+      new ConcurrentHashMap<>();
   private static String mainUrl;
   private final ParseResults parseResults;
   private static final byte DELAY = 100;
 
   Parser(String url) {
     parseResults = new ParseResults(url);
+    allParseResults.put(url, parseResults);
   }
 
   public static Parser getInstance(String url) {
@@ -35,8 +41,12 @@ public class Parser extends RecursiveTask<ParseResults> {
       url += "/";
     }
     mainUrl = url;
-    ParseResults.getAllParseResults().clear();
+    allParseResults.clear();
     return new Parser(url);
+  }
+
+  public static Map<String, ParseResults> getAllParseResults() {
+    return allParseResults;
   }
 
   @Override
@@ -49,8 +59,8 @@ public class Parser extends RecursiveTask<ParseResults> {
       ArrayList<Parser> parsers = new ArrayList<>();
       synchronized (parseResults.getUrlsSet()) {
         for (String str : parseResults.getUrlsSet()) {
-          synchronized (ParseResults.getAllParseResults()) {
-            if (!ParseResults.getAllParseResults().containsKey(str)) {
+          synchronized (allParseResults) {
+            if (!allParseResults.containsKey(str)) {
               parsers.add(new Parser(str));
             }
           }
@@ -65,12 +75,6 @@ public class Parser extends RecursiveTask<ParseResults> {
       Thread.currentThread().interrupt();
       return parseResults;
     }
-  }
-
-  private Document getDocumentFromCurrentUrl() throws IOException,
-      InterruptedException {
-    Thread.sleep((long) DELAY + new Random().nextInt(DELAY));
-    return Jsoup.connect(parseResults.getUrl()).maxBodySize(0).get();
   }
 
   private void getUrlsFromDocumentToParseResultUrlsSet(Document document) {
@@ -96,5 +100,17 @@ public class Parser extends RecursiveTask<ParseResults> {
 
   public ParseResults getParseResults() {
     return parseResults;
+  }
+
+  private Document getDocumentFromCurrentUrl() throws IOException,
+      InterruptedException {
+    Thread.sleep((long) DELAY + new Random().nextInt(DELAY));
+    String url = parseResults.getUrl();
+    try {
+      return Jsoup.connect(url).maxBodySize(0).get();
+    } catch (HttpStatusException ex) {
+      log.error("Failed to load document from {}", url);
+      return new Document("");
+    }
   }
 }
