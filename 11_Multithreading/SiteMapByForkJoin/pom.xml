@@ -10,7 +10,7 @@
         <configuration>
           <archive>
             <manifest>
-              <mainClass>Main</mainClass>
+              <mainClass>MainGUI</mainClass>
             </manifest>
           </archive>
           <descriptorRefs>
@@ -50,11 +50,6 @@
       <artifactId>log4j-api</artifactId>
       <groupId>org.apache.logging.log4j</groupId>
       <version>2.13.1</version>
-    </dependency>
-    <dependency>
-      <artifactId>gson</artifactId>
-      <groupId>com.google.code.gson</groupId>
-      <version>2.8.6</version>
     </dependency>
   </dependencies>
   <modelVersion>4.0.0</modelVersion>
