@@ -1,25 +1,37 @@
-package main.java.binary_search;
+package binary_search;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Optional;
 
-public class BinarySearch
-{
+public class BinarySearch {
 
-    private final ArrayList<String> list;
+  private final ArrayList<String> list;
 
-    public BinarySearch(ArrayList<String> list)
-    {
-        this.list = list;
+  public BinarySearch(ArrayList<String> list) {
+    Collections.sort(
+        Optional.ofNullable(list).orElseThrow(IllegalArgumentException::new));
+    this.list = list;
+  }
+
+  public int search(String query) {
+    return Optional.ofNullable(query).filter(s -> !s.isEmpty())
+        .map(s -> search(s, 0, list.size() - 1))
+        .orElseThrow(IllegalArgumentException::new);
+  }
+
+  private int search(String query, int from, int to) {
+    if (from == to) {
+      return -1;
     }
-
-    public int search(String query)
-    {
-        return search(query, 0, list.size() - 1);
+    int middle = (from + to) / 2;
+    int comparison = query.compareTo(list.get(middle));
+    if (comparison == 0) {
+      return middle;
     }
-
-    private int search(String query, int from, int to)
-    {
-        //TODO: write code here
-        return -1;
+    if (comparison > 0) {
+      return search(query, middle, to);
     }
+    return search(query, from, middle);
+  }
 }
