@@ -1,10 +1,11 @@
-package binary_search;
+package main.java.binary_search;
 
 import java.util.ArrayList;
 
 public class BinarySearch
 {
-    private ArrayList<String> list;
+
+    private final ArrayList<String> list;
 
     public BinarySearch(ArrayList<String> list)
     {

@@ -1,4 +1,4 @@
-package rabin_karp;
+package main.java.rabin_karp;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -6,7 +6,8 @@ import java.util.TreeMap;
 
 public class RabinKarpExtended
 {
-    private String text;
+
+    private final String text;
     private TreeMap<Integer, Integer> number2position;
 
     public RabinKarpExtended(String text)

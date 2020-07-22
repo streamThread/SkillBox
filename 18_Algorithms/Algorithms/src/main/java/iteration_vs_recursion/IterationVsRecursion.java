@@ -1,4 +1,4 @@
-package iteration_vs_recursion;
+package main.java.iteration_vs_recursion;
 
 public class IterationVsRecursion
 {

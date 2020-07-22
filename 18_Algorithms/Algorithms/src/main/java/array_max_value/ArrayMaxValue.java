@@ -1,4 +1,4 @@
-package array_max_value;
+package main.java.array_max_value;
 
 public class ArrayMaxValue
 {

@@ -1,4 +1,4 @@
-package merge_sort;
+package main.java.merge_sort;
 
 public class MergeSort
 {
