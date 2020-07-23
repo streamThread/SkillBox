@@ -10,12 +10,15 @@ public class BinarySearch {
 
   public BinarySearch(ArrayList<String> list) {
     Collections.sort(
-        Optional.ofNullable(list).orElseThrow(IllegalArgumentException::new));
+        Optional.ofNullable(list)
+            .filter(l -> l.size() > 1)
+            .orElseThrow(IllegalArgumentException::new));
     this.list = list;
   }
 
   public int search(String query) {
-    return Optional.ofNullable(query).filter(s -> !s.isEmpty())
+    return Optional.ofNullable(query)
+        .filter(q -> !q.isEmpty())
         .map(s -> search(s, 0, list.size() - 1))
         .orElseThrow(IllegalArgumentException::new);
   }
