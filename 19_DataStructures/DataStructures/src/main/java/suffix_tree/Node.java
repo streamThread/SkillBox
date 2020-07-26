@@ -5,14 +5,14 @@ import java.util.List;
 
 public class Node {
 
-  private final String fragment;
-  private final ArrayList<Integer> nextNodes;
-  private final int position;
+  private final ArrayList<Node> nextNodes;
+  private String fragment;
+  private int position;
 
   public Node(String fragment, int position) {
     this.fragment = fragment;
-    nextNodes = new ArrayList<>();
     this.position = position;
+    nextNodes = new ArrayList<>();
   }
 
   public String getFragment() {
@@ -23,7 +23,23 @@ public class Node {
     return position;
   }
 
-  public List<Integer> getNextNodes() {
+  public List<Node> getNextNodes() {
     return nextNodes;
+  }
+
+  public void setFragment(String fragment) {
+    this.fragment = fragment;
+  }
+
+  public void setPosition(int position) {
+    this.position = position;
+  }
+
+  @Override
+  public String toString() {
+    return "Node{" +
+        "fragment: " + fragment +
+        ", position: " + position +
+        '}';
   }
 }
