@@ -22,5 +22,5 @@ public class SuffixTree {
     ArrayList<Integer> positions = new ArrayList<>();
     //TODO
     return positions;
-    }
+  }
 }

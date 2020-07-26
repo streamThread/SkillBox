@@ -23,8 +23,7 @@ public class Node {
     return position;
   }
 
-    public List<Integer> getNextNodes()
-    {
-        return nextNodes;
-    }
+  public List<Integer> getNextNodes() {
+    return nextNodes;
+  }
 }
