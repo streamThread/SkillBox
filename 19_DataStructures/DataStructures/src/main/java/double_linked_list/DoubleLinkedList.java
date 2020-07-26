@@ -1,49 +1,63 @@
 package double_linked_list;
 
-public class DoubleLinkedList
-{
-    private ListItem head;
-    private ListItem tail;
+public class DoubleLinkedList {
 
-    public ListItem getHeadElement()
-    {
-        return head;
-    }
+  private ListItem head;
+  private ListItem tail;
 
-    public ListItem getTailElement()
-    {
-        return tail;
-    }
+  public ListItem getHeadElement() {
+    return head;
+  }
 
-    public ListItem popHeadElement()
-    {
-        //TODO
-        return null;
-    }
+  public ListItem getTailElement() {
+    return tail;
+  }
 
-    public ListItem popTailElement()
-    {
-        //TODO
-        return null;
+  public ListItem popHeadElement() {
+    ListItem itemToPop = head;
+    if (head != null) {
+      head = head.getNext();
+      head.setPrev(null);
     }
+    return itemToPop;
+  }
 
-    public void removeHeadElement()
-    {
-        //TODO
+  public ListItem popTailElement() {
+    ListItem itemToPop = tail;
+    if (tail != null) {
+      tail = tail.getPrev();
+      tail.setNext(null);
     }
+    return itemToPop;
+  }
 
-    public void removeTailElement()
-    {
-        //TODO
+  public void removeHeadElement() {
+    if (head != null) {
+      head = head.getNext();
+      head.setPrev(null);
     }
+  }
 
-    public void addToHead(ListItem item)
-    {
-        //TODO
+  public void removeTailElement() {
+    if (tail != null) {
+      tail = tail.getPrev();
+      tail.setNext(null);
     }
+  }
 
-    public void addToTail(ListItem item)
-    {
-        //TODO
+  public void addToHead(ListItem item) {
+    if (head != null) {
+      head.setPrev(item);
     }
+    item.setNext(head);
+    head = item;
+  }
+
+  public void addToTail(ListItem item) {
+    if (tail != null) {
+      tail.setNext(item);
+    }
+    item.setNext(tail);
+    tail = item;
+  }
 }

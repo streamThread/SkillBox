@@ -13,13 +13,11 @@ public class ListItem {
     return data;
   }
 
-    public void setNext(ListItem item)
-    {
-        next = item;
-    }
+  public ListItem getNext() {
+    return next;
+  }
 
-    public ListItem getNext()
-    {
-        return next;
-    }
+  public void setNext(ListItem item) {
+    next = item;
+  }
 }
