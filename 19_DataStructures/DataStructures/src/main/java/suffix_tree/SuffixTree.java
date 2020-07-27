@@ -1,6 +1,7 @@
 package suffix_tree;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -25,19 +26,18 @@ public class SuffixTree {
   }
 
   public List<String> search(String pattern) {
-    List<String> result = new ArrayList<>();
     List<Node> nodes = getAllNodesInTraversePath(pattern, root, false);
-    if (!nodes.isEmpty()) {
-      Node lastNode = nodes.get(nodes.size() - 1);
-      if (lastNode != null) {
-        List<Integer> positions = getPositions(lastNode);
-        positions = positions.stream()
-            .sorted()
-            .collect(Collectors.toList());
-        positions.forEach(m -> result.add((markPatternInText(m, pattern))));
-      }
+    if (nodes.isEmpty()) {
+      return Collections.emptyList();
     }
-    return result;
+    Node lastNode = nodes.get(nodes.size() - 1);
+    if (lastNode == null) {
+      return Collections.emptyList();
+    }
+    return getPositions(lastNode).stream()
+        .sorted()
+        .map(position -> markPatternInText(position, pattern))
+        .collect(Collectors.toList());
   }
 
   private void addChildNode(Node parentNode, String text, int index) {

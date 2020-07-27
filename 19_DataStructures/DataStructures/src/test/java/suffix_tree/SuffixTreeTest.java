@@ -1,7 +1,6 @@
 package suffix_tree;
 
-import static java.util.Collections.EMPTY_LIST;
-
+import java.util.Collections;
 import java.util.List;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -11,7 +10,7 @@ class SuffixTreeTest {
   SuffixTree suffixTree = new SuffixTree("havanabanana");
 
   @Test
-  void searchOneLetter() {
+  void searchOneLetterPattern() {
     List<String> matches = suffixTree.search("a");
     Assertions.assertLinesMatch(List.of(
         "h[a]vanabanana",
@@ -31,6 +30,6 @@ class SuffixTreeTest {
   @Test
   void searchInvalidPattern() {
     List<String> matches = suffixTree.search("nag");
-    Assertions.assertLinesMatch(EMPTY_LIST, matches);
+    Assertions.assertLinesMatch(Collections.emptyList(), matches);
   }
 }
