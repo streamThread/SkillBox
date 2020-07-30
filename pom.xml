@@ -23,6 +23,7 @@
     <module>15_BigData/HDFSExample</module>
     <module>15_BigData/Spark</module>
     <module>18_Algorithms/Algorithms</module>
+    <module>19_DataStructures/DataStructures</module>
   </modules>
   <packaging>pom</packaging>
 
