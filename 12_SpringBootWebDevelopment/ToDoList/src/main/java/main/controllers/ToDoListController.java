@@ -1,17 +1,17 @@
 package main.controllers;
 
-import com.fasterxml.jackson.annotation.JsonView;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.List;
 import main.entity.Action;
 import main.entity.User;
+import main.entity.dto.GetActionDTO;
 import main.entity.dto.PutActionDTO;
 import main.entity.dto.ReplaceActionDTO;
 import main.service.ActionService;
-import main.util.View;
 import org.springframework.http.CacheControl;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -44,13 +44,12 @@ public class ToDoListController {
     this.actionService = actionService;
   }
 
-  @JsonView(View.ActionWithOwnerLogin.class)
   @ApiOperation(value =
       "returns list of actions. Simple pagination available. You can optionally set the "
           +
           "start and sample size. Also you can search text (if action contains that text)")
   @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
-  public ResponseEntity<List<Action>> getAction(@ApiParam(
+  public ResponseEntity<List<GetActionDTO>> getAction(@ApiParam(
       value = "text to search in the actions of ToDo list")
   @RequestParam(required = false) String query,
       @ApiParam(value = "Number of page that you want to see. " +
@@ -60,7 +59,7 @@ public class ToDoListController {
       @RequestParam(required = false) Integer pageSize,
       @ApiIgnore
       @AuthenticationPrincipal User user) {
-    List<Action> actions;
+    List<GetActionDTO> actions = new ArrayList<>();
     if (pageNumber == null || pageSize == null) {
       if (query == null) {
         actions = actionService.getAllActionsByUser(user);
@@ -97,7 +96,7 @@ public class ToDoListController {
   ) {
     Action action = new Action();
     action.setContent(putActionDTO.getContent());
-    action.setTimeStamp(putActionDTO.getTimeStamp());
+    action.setCreationTime(putActionDTO.getCreationTime());
     action.setOwner(user);
     Long id = actionService.addActionToDB(action);
     return ResponseEntity.created(URI.create(String.format("/actions/%d", id)))
@@ -112,7 +111,7 @@ public class ToDoListController {
     Action action = new Action();
     action.setId(replaceActionDTO.getId());
     action.setContent(replaceActionDTO.getContent());
-    action.setTimeStamp(replaceActionDTO.getTimeStamp());
+    action.setCreationTime(replaceActionDTO.getCreationTime());
     Long savedId = actionService.replaceActionToDBIfExists(action);
     return savedId != 0 ?
         ResponseEntity

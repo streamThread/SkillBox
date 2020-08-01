@@ -28,7 +28,7 @@ public class RegistrationController {
   public String addUser(AddUserDTO addUserDTO, Model model) {
     return userService.getUserByLogin(addUserDTO.getLogin())
         .map(a -> {
-          model.addAttribute("message", "User exists!");
+          model.addAttribute("message", "Error: User exists!");
           return "registration";
         })
         .orElseGet(() -> {

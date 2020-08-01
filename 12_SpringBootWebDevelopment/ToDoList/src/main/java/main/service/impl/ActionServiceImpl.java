@@ -1,11 +1,15 @@
 package main.service.impl;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import main.entity.Action;
 import main.entity.User;
+import main.entity.dto.GetActionDTO;
 import main.repos.ActionRepository;
 import main.service.ActionService;
+import main.util.Convert;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
@@ -26,14 +30,22 @@ public class ActionServiceImpl implements ActionService {
   }
 
   @Override
-  public List<Action> getAllActionsByUser(User user) {
-    return actionRepository.findAllByOwnerOrderByIdDesc(user);
+  public List<GetActionDTO> getAllActionsByUser(User user) {
+    return actionRepository.findAllByOwnerOrderByIdDesc(user).stream()
+        .map(a -> new GetActionDTO(a.getId(), a.getContent(),
+            Convert.getDateAsString(a.getCreationTime())))
+        .collect(Collectors.toCollection(ArrayList::new));
   }
 
   @Override
-  public List<Action> getActionsByPage(Integer pageNumber, Integer pageSize) {
+  public List<GetActionDTO> getActionsByPage(Integer pageNumber,
+      Integer pageSize) {
     return actionRepository
-        .findBy(PageRequest.of(pageNumber, pageSize, sortById)).getContent();
+        .findBy(PageRequest.of(pageNumber, pageSize, sortById)).getContent()
+        .stream()
+        .map(a -> new GetActionDTO(a.getId(), a.getContent(),
+            Convert.getDateAsString(a.getCreationTime())))
+        .collect(Collectors.toCollection(ArrayList::new));
   }
 
   @Override
@@ -47,16 +59,23 @@ public class ActionServiceImpl implements ActionService {
   }
 
   @Override
-  public List<Action> getAllActionsByUserAndContent(User user, String query) {
+  public List<GetActionDTO> getAllActionsByUserAndContent(User user,
+      String query) {
     return actionRepository
-        .findByContentContainingAndOwnerOrderByIdDesc(query, user);
+        .findByContentContainingAndOwnerOrderByIdDesc(query, user).stream()
+        .map(a -> new GetActionDTO(a.getId(), a.getContent(),
+            Convert.getDateAsString(a.getCreationTime())))
+        .collect(Collectors.toList());
   }
 
   @Override
-  public List<Action> getAllActionsByContentByPage(String query,
+  public List<GetActionDTO> getAllActionsByContentByPage(String query,
       Integer pageNumber, Integer pageSize) {
     return actionRepository.findByContentContaining(query,
-        PageRequest.of(pageNumber, pageSize, sortById));
+        PageRequest.of(pageNumber, pageSize, sortById)).stream()
+        .map(a -> new GetActionDTO(a.getId(), a.getContent(),
+            Convert.getDateAsString(a.getCreationTime())))
+        .collect(Collectors.toList());
   }
 
   @Override

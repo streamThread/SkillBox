@@ -8,15 +8,14 @@
       href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css"
       integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk"
       rel="stylesheet">
-<script crossorigin="anonymous"
-        integrity="sha384-OgVRvuATP1z7JjHLkuOU7Xw704+h835Lr+6QL9UvYjZE3Ipu6Tp75j7Bh/kR0JKI"
-        src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js"></script>
 <div class="container-fluid">
   <div class="manage-buttons">
     <form action="/user" method="get">
       <button class="btn btn-primary btn-sm">Пользователи</button>
     </form>
-    <form action="/logout" method="get">
+    <form action="/logout" method="post">
+      <input th:name="${_csrf.parameterName}"
+             th:value="${_csrf.token}" type="hidden"/>
       <button class="btn btn-primary btn-sm" type="submit">Выйти</button>
     </form>
   </div>
@@ -27,13 +26,11 @@
   </div>
   <div class="row justify-content-center">
     <div class="col-4">
-      <form id="task-create-form">
+      <form id="taskCreateForm">
         <div class="input-group mb-3">
           <input class="form-control" id="task-content" name="content"
                  placeholder="Добавьте задачу"
                  type="text"/>
-          <input id="token" th:name="${_csrf.parameterName}"
-                 th:value="${_csrf.token}" type="hidden"/>
           <div class="input-group-append">
             <button class="btn btn-outline-secondary save-button"
                     id="task-save-button" type="submit">
@@ -46,9 +43,9 @@
   </div>
   <div class="row justify-content-center">
     <div class="col-4">
-      <form action="/" method="get">
+      <form action="/" id="taskFilterForm" method="get">
         <div class="input-group mb-3">
-          <input class="form-control" name="filter" th:value="${filter}"
+          <input class="form-control" name="filter"
                  type="text">
           <div class="input-group-append">
             <button class="btn btn-outline-secondary" type="submit">
@@ -61,23 +58,26 @@
   </div>
   <div class="row justify-content-center">
     <div class="col-8">
-      <table class="table table-bordered">
-        <tbody id="tasks-list"></tbody>
+      <table class="table table-bordered" id="tasks-list">
       </table>
     </div>
   </div>
 </div>
-<script>
+<script th:inline="javascript">
   (function () {
     console.clear()
-    const taskCreateForm = document.querySelector("#task-create-form")
-    const csrfToken = taskCreateForm.querySelector("#token").value
+    const csrfToken = [[${_csrf.token}]]
+    const csrfTokenName = [[${_csrf.headerName}]]
 
-    taskCreateForm.addEventListener("submit", function (event) {
-      event.preventDefault()
-      const taskContent = event.target.content.value
-      createTask(taskContent)
-    })
+    taskCreateForm.onsubmit = async (e) => {
+      e.preventDefault();
+      createTask(e.target.content.value);
+    }
+
+    taskFilterForm.onsubmit = async (e) => {
+      e.preventDefault();
+      fetchTasks(e.target.filter.value);
+    }
 
     document.addEventListener('click', function (event) {
       if (event.target.classList.contains('task-delete-button')) {
@@ -86,15 +86,20 @@
     })
 
     function createTask(taskContent) {
+      taskContent = taskContent && taskContent.trim()
+      if (!taskContent) {
+        alert("Нельзя добавить пустую задачу!")
+        return
+      }
       const createTaskCall = fetch('/actions/', {
         method: 'POST',
         body: JSON.stringify({
           content: taskContent,
-          timeStamp: "2020-07-06T11:11:32.885Z"
+          creationTime: new Date().toISOString()
         }),
         headers: {
           "Content-type": "application/json",
-          "X-CSRF-TOKEN": csrfToken
+          [csrfTokenName]: csrfToken
         }
       })
       createTaskCall.then(function (response) {
@@ -108,17 +113,18 @@
       fetch(`/actions/${taskId}`, {
         method: 'DELETE',
         headers: {
-          "X-CSRF-TOKEN": csrfToken
+          [csrfTokenName]: csrfToken
         }
       }).then(async function (response) {
         fetchTasks()
       })
     }
 
-    function fetchTasks() {
+    function fetchTasks(filterContent) {
       const tasksListTable = document.querySelector("#tasks-list")
-      const noTasks = document.querySelector("#tasks-not-present")
-      fetch("/actions/", {
+      let url = filterContent ? `/actions/?query=${filterContent}`
+          : "/actions/";
+      fetch(url, {
         headers: {
           "Accept": "application/json"
         }
@@ -128,16 +134,18 @@
         if (result.length > 0) {
           const tasks = []
           tasks.push(`
-                        <tr>
-                            <th width="200">Время добавления или изменения</th>
-                            <th>Содержание</th>
+                        <tr class="d-flex">
+                            <th class="align-middle text-center col-3">Время добавления</th>
+                            <th class="align-middle text-center col-7">Содержание</th>
+                            <th class="col-1"></th>
+                            <th class="col-1"></th>
                         </tr>
                     `)
           result.forEach(task => {
-            tasks.push(`<tr>
-                            <td>${task.timeStamp}</td>
-                            <td>${task.content}</td>
-                            <td width="40px">
+            tasks.push(`<tr class="d-flex">
+                            <td class="col-3">${task.time}</td>
+                            <td class="col-7">${task.content}</td>
+                            <td class="col-1">
                                <button data-id="${task.id}" class="task-edit-button btn btn-light">
                                    <svg data-id="${task.id}" width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-pencil task-edit-button" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
                                        <path data-id="${task.id}" class="task-edit-button" fill-rule="evenodd" d="M11.293 1.293a1 1 0 0 1 1.414 0l2 2a1 1 0 0 1 0 1.414l-9 9a1 1 0 0 1-.39.242l-3 1a1 1 0 0 1-1.266-1.265l1-3a1 1 0 0 1 .242-.391l9-9zM12 2l2 2-9 9-3 1 1-3 9-9z"/>
@@ -145,7 +153,7 @@
                                     </svg>
                                 </button>
                             </td>
-                            <td width="40px">
+                            <td class="col-1">
                                 <button data-id="${task.id}" class="task-delete-button btn btn-light">
                                     <svg data-id="${task.id}" width="1em" height="1em" viewBox="0 0 16 16" class="task-delete-button bi bi-trash-fill" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
                                         <path data-id="${task.id}" class="task-delete-button" fill-rule="evenodd" d="M2.5 1a1 1 0 0 0-1 1v1a1 1 0 0 0 1 1H3v9a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V4h.5a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H10a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1H2.5zm3 4a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 .5-.5zM8 5a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7A.5.5 0 0 1 8 5zm3 .5a.5.5 0 0 0-1 0v7a.5.5 0 0 0 1 0v-7z"/>
@@ -169,9 +177,20 @@
       textArea.value = ''
     }
 
-    document.addEventListener("DOMContentLoaded", fetchTasks)
+    document.addEventListener("DOMContentLoaded", fetchTasks())
   })()
 </script>
+<script crossorigin="anonymous"
+        integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj"
+        src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script
+    crossorigin="anonymous"
+    integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo"
+    src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script>
+<script
+    crossorigin="anonymous"
+    integrity="sha384-OgVRvuATP1z7JjHLkuOU7Xw704+h835Lr+6QL9UvYjZE3Ipu6Tp75j7Bh/kR0JKI"
+    src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js"></script>
 <style>
   .manage-buttons {
     display: flex;

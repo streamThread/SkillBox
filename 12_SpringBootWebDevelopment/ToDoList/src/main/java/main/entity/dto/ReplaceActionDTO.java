@@ -12,5 +12,5 @@ public class ReplaceActionDTO {
   @ApiModelProperty(value = "content of the new action", required = true)
   private String content;
   @ApiModelProperty(value = "adding time of the new action", required = true)
-  private LocalDateTime timeStamp;
+  private LocalDateTime creationTime;
 }

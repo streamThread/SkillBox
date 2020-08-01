@@ -1,19 +1,60 @@
 <!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="https://www.thymeleaf.org"
->
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="https://www.thymeleaf.org">
 <head>
+  <link crossorigin="anonymous"
+        href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css"
+        integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk"
+        rel="stylesheet">
   <title>Login Page</title>
 </head>
 <body>
-<div th:if="${message}" th:text="${message}"></div>
-<div style="margin: 0 auto; text-align: center">Add new user</div>
-<form action="/registration" method="post"
-      style="display: table; margin: 0 auto; text-align: center">
-  <div><label> User Name : <input name="login" type="text"/> </label></div>
-  <div><label> Password: <input name="password" type="password"/> </label></div>
-  <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}"
-         type="hidden"/>
-  <div><input type="submit" value="Sign In"/></div>
-</form>
+<div class="d-flex align-items-center login-form-wrapper">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col text-center">
+        <H4>Add new user</H4>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col text-center text-danger" th:if="${message}"
+           th:text="${message}"></div>
+    </div>
+    <div class="row">
+      <div class="col text-center">
+        <form action="/registration" method="post">
+          <div class="form-group">
+            <label> User Name : <input class="form-control" minlength="5"
+                                       name="login" type="text"/>
+            </label>
+          </div>
+          <div class="form-group">
+            <label> Password: <input class="form-control" name="password"
+                                     type="password"/> </label>
+          </div>
+          <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}"
+                 type="hidden"/>
+          <div class="form-group">
+            <input class="btn btn-primary" type="submit" value="Sign In"/></div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+<script crossorigin="anonymous"
+        integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj"
+        src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script
+    crossorigin="anonymous"
+    integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo"
+    src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script>
+<script
+    crossorigin="anonymous"
+    integrity="sha384-OgVRvuATP1z7JjHLkuOU7Xw704+h835Lr+6QL9UvYjZE3Ipu6Tp75j7Bh/kR0JKI"
+    src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js"></script>
+<style>
+  .login-form-wrapper {
+    height: 100vh;
+  }
+</style>
 </body>
 </html>

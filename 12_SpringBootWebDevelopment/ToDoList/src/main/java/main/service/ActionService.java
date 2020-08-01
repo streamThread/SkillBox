@@ -4,22 +4,24 @@ import java.util.List;
 import java.util.Optional;
 import main.entity.Action;
 import main.entity.User;
+import main.entity.dto.GetActionDTO;
 
 public interface ActionService {
 
   List<Action> getAllActions();
 
-  List<Action> getAllActionsByUser(User user);
+  List<GetActionDTO> getAllActionsByUser(User user);
 
-  List<Action> getActionsByPage(Integer pageNumber, Integer pageSize);
+  List<GetActionDTO> getActionsByPage(Integer pageNumber, Integer pageSize);
 
   Optional<Action> getAction(Long id);
 
   List<Action> getAllActionsByContent(String query);
 
-  List<Action> getAllActionsByUserAndContent(User user, String query);
+  List<GetActionDTO> getAllActionsByUserAndContent(User user, String query);
 
-  List<Action> getAllActionsByContentByPage(String query, Integer pageNumber,
+  List<GetActionDTO> getAllActionsByContentByPage(String query,
+      Integer pageNumber,
       Integer pageSize);
 
   Long addActionToDB(Action action);

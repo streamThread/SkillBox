@@ -10,5 +10,5 @@ public class PutActionDTO {
   @ApiModelProperty(value = "content of the new action to add", required = true)
   private String content;
   @ApiModelProperty(value = "adding time of the new action", required = true)
-  private LocalDateTime timeStamp;
+  private LocalDateTime creationTime;
 }

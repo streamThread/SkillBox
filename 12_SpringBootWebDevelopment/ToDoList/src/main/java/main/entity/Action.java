@@ -29,7 +29,7 @@ public class Action {
   private String content;
 
   @ApiModelProperty(value = "adding time")
-  private LocalDateTime timeStamp;
+  private LocalDateTime creationTime;
 
   @ManyToOne(fetch = FetchType.EAGER)
   @JoinColumn(name = "user_id")
