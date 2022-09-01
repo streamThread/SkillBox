@@ -34,7 +34,7 @@
     <dependency>
       <artifactId>jsoup</artifactId>
       <groupId>org.jsoup</groupId>
-      <version>1.12.2</version>
+      <version>1.15.3</version>
     </dependency>
     <dependency>
       <artifactId>lombok</artifactId>
